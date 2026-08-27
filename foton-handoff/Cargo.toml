@@ -1,0 +1,22 @@
+[package]
+name = "foton-handoff"
+version = "0.1.2"
+edition = "2021"
+description = "foton-handoff - automated handoff read/write"
+
+[lib]
+name = "foton_handoff_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "foton-handoff"
+path = "src/main.rs"
+
+[dependencies]
+chrono = "=0.4.45"
+
+[profile.release]
+lto = true
+codegen-units = 1
+opt-level = "s"
+strip = true

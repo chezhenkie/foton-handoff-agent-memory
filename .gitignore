@@ -1,0 +1,7 @@
+agents.md
+AGENTS.md
+*.exe
+target/
+handoff-tmp.txt
+Standard streams stdinn stdout stderr - Wikipedia.png
+_ _ _ regels voor text powershell en tmp folders in windows.txt
