@@ -4,7 +4,11 @@ All notable changes to foton-handoff. Dates are UTC.
 
 ## Unreleased
 
-- Repository hygiene: the project-root `foton-handoff.exe` was removed. Binaries are now only produced under the crate `target/` folder (`target/release/foton-handoff` on Linux, `target/x86_64-pc-windows-gnu/release/foton-handoff.exe` on Windows) and are never copied to the project root. README, design/state doc, e2e scripts guide, and Windows e2e script defaults updated to match.
+- Source folder renamed `foton-handoff/` -> `foton-handoff-src/`; `instructions-for-building-and-testing.md` moved from the crate folder to the project root; scripts, CI and docs follow the new paths.
+- `release/` added at the project root as the ship location for both binaries (`foton-handoff`, `foton-handoff.exe`), gitignored. Build output stays under `foton-handoff-src/target/`; the project root itself holds no binary.
+- Private GitHub remote `chezhenkie/foton-handoff-agent-memory` with a CI workflow: `fmt`, Clippy `-D warnings`, unit tests, release build and e2e suite on Linux and Windows, a static CRT check on Windows, and both binaries uploaded as artifacts.
+- `.gitattributes` normalizes text files to LF so CI checkouts match local builds.
+- `Cargo.lock` version corrected from `0.1.0` to `0.1.2` to match `Cargo.toml`.
 
 ## v0.1.2 - 2026-08-22
 

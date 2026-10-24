@@ -118,9 +118,10 @@ RUSTFLAGS="-C target-feature=+crt-static" \
   cargo build --release --target x86_64-pc-windows-gnu
 ```
 
-The built binaries stay in the crate `target/` folder; nothing is copied to the
-project root. A CI workflow (`.github/workflows/build.yml`) is kept for when the
-repo gains a remote again; until then all builds are local (WSL).
+The built binaries stay in the crate `target/` folder; the two ship binaries are
+copied to `release/`. A GitHub Actions workflow (`.github/workflows/build.yml`)
+runs the same checks on the private remote
+`chezhenkie/foton-handoff-agent-memory`; local builds still run in WSL.
 
 ## Project layout
 
@@ -199,10 +200,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-window
 
 ## CI
 
-A GitHub Actions workflow (`.github/workflows/build.yml`) is kept for when the
-repo gains a remote under a new account: Clippy + unit tests + e2e suites +
-release builds on every push/PR to `main`, with binaries uploaded as artifacts.
-There is no remote yet, so all builds and tests run locally in WSL.
+GitHub Actions workflow `.github/workflows/build.yml` on the private repository
+`https://github.com/chezhenkie/foton-handoff-agent-memory` (branch `main`):
+`fmt`, Clippy `-D warnings`, unit tests, release build, e2e suite, and a static
+CRT check on Windows; both binaries are uploaded as artifacts. Local builds and
+tests still run in WSL via `scripts/build-and-test-all.sh`.
 
 Dependencies are locked (`chrono = "=0.4.45"`, pinned toolchain, checked-in
 `Cargo.lock`) for reproducible builds. Current source-truth version: v0.1.2.

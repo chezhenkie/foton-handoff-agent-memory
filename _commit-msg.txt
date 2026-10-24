@@ -1,0 +1,5 @@
+Docs: record the private remote and the CI workflow
+
+README, design/state, e2e guide and CHANGELOG still described the repo as
+remote-less. They now name the private remote, the CI jobs and the release/
+ship layout.

@@ -75,16 +75,16 @@ the default candidates exist.
 ### CI integration
 
 `.github/workflows/build.yml` runs both suites as dedicated steps in their
-build jobs when a remote is re-added under a new account, always passing the
-freshly built binary explicitly:
+build jobs on the private remote, always passing the freshly built binary
+explicitly:
 
-- Linux job:   `bash scripts/e2e-linux.sh foton-handoff-src/target/release/foton-handoff`
-- Windows job: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 -Bin <staged exe>`
+- Linux job:   `bash ../scripts/e2e-linux.sh ./target/release/foton-handoff`
+- Windows job: `../scripts/e2e-windows.ps1 -Bin ./target/release/foton-handoff.exe`
 
-A failing suite step fails the whole job. Until the repo gains a remote again,
-both suites run locally via `scripts/build-and-test-all.sh`, which runs fmt,
-clippy, unit tests, both builds, both e2e suites, and both speedtests in one
-command (stops on first failure).
+A failing suite step fails the whole job. The same checks also run locally via
+`scripts/build-and-test-all.sh`, which runs fmt, clippy, unit tests, both
+builds, both e2e suites, and both speedtests in one command (stops on first
+failure).
 
 ---
 
