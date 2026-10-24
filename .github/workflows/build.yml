@@ -68,6 +68,27 @@ jobs:
         run: cargo test
       - name: release build (static CRT)
         run: cargo build --release
+      - name: version resource check
+        shell: pwsh
+        run: |
+          $exe = "target/release/foton-handoff.exe"
+          $want = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          $vi = [Diagnostics.FileVersionInfo]::GetVersionInfo((Resolve-Path $exe))
+          $bad = @()
+          foreach ($field in @("ProductName", "InternalName")) {
+            if ($vi.$field -ne "foton-handoff") { $bad += "$field='$($vi.$field)'" }
+          }
+          if ($vi.OriginalFilename -ne "foton-handoff.exe") { $bad += "OriginalFilename='$($vi.OriginalFilename)'" }
+          if (-not $vi.FileDescription.StartsWith("foton-handoff")) { $bad += "FileDescription='$($vi.FileDescription)'" }
+          if (-not $vi.LegalCopyright.StartsWith("Copyright")) { $bad += "LegalCopyright='$($vi.LegalCopyright)'" }
+          if ("$($vi.FileMajorPart).$($vi.FileMinorPart).$($vi.FileBuildPart)" -ne $want) {
+            $bad += "FileVersion=$($vi.FileMajorPart).$($vi.FileMinorPart).$($vi.FileBuildPart) want $want"
+          }
+          if ($bad) {
+            Write-Error ("version resource mismatch: " + ($bad -join "; "))
+            exit 1
+          }
+          "version resource ok: $want"
       - name: static link check
         shell: pwsh
         run: |
@@ -88,6 +109,94 @@ jobs:
         with:
           name: foton-handoff-windows
           path: foton-handoff-src/target/release/foton-handoff.exe
+          if-no-files-found: error
+
+  windows-arm64:
+    name: windows-arm64
+    runs-on: windows-11-arm
+    defaults:
+      run:
+        working-directory: foton-handoff-src
+    env:
+      RUSTFLAGS: -C target-feature=+crt-static
+    steps:
+      - uses: actions/checkout@v7
+      - name: install toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.98.0
+      - name: add arm64 target
+        run: rustup target add aarch64-pc-windows-msvc
+      - name: resolve resource compiler
+        shell: pwsh
+        run: |
+          $kits = "${env:ProgramFiles(x86)}\Windows Kits\10\bin"
+          $rc = Get-ChildItem $kits -Directory -ErrorAction Stop |
+            Sort-Object Name -Descending |
+            ForEach-Object { @((Join-Path $_.FullName "arm64\rc.exe"), (Join-Path $_.FullName "x64\rc.exe")) } |
+            Where-Object { Test-Path $_ } |
+            Select-Object -First 1
+          if (-not $rc) {
+            Write-Error "no rc.exe under $kits"
+            exit 1
+          }
+          "RC=$rc" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "using $rc"
+      - name: release build (static CRT)
+        run: cargo build --release --target aarch64-pc-windows-msvc
+      - name: architecture check
+        shell: pwsh
+        run: |
+          $exe = "target/aarch64-pc-windows-msvc/release/foton-handoff.exe"
+          $bytes = [IO.File]::ReadAllBytes($exe)
+          $pe = [BitConverter]::ToInt32($bytes, 0x3C)
+          $machine = [BitConverter]::ToUInt16($bytes, $pe + 4)
+          if ($machine -ne 0xAA64) {
+            Write-Error ("not an ARM64 PE: machine=0x{0:X4}" -f $machine)
+            exit 1
+          }
+          "ARM64 PE confirmed in $exe"
+      - name: version resource check
+        shell: pwsh
+        run: |
+          $exe = "target/aarch64-pc-windows-msvc/release/foton-handoff.exe"
+          $want = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          $vi = [Diagnostics.FileVersionInfo]::GetVersionInfo((Resolve-Path $exe))
+          $bad = @()
+          foreach ($field in @("ProductName", "InternalName")) {
+            if ($vi.$field -ne "foton-handoff") { $bad += "$field='$($vi.$field)'" }
+          }
+          if ($vi.OriginalFilename -ne "foton-handoff.exe") { $bad += "OriginalFilename='$($vi.OriginalFilename)'" }
+          if (-not $vi.FileDescription.StartsWith("foton-handoff")) { $bad += "FileDescription='$($vi.FileDescription)'" }
+          if (-not $vi.LegalCopyright.StartsWith("Copyright")) { $bad += "LegalCopyright='$($vi.LegalCopyright)'" }
+          if ("$($vi.FileMajorPart).$($vi.FileMinorPart).$($vi.FileBuildPart)" -ne $want) {
+            $bad += "FileVersion=$($vi.FileMajorPart).$($vi.FileMinorPart).$($vi.FileBuildPart) want $want"
+          }
+          if ($bad) {
+            Write-Error ("version resource mismatch: " + ($bad -join "; "))
+            exit 1
+          }
+          "version resource ok: $want"
+      - name: static link check
+        shell: pwsh
+        run: |
+          $exe = "target/aarch64-pc-windows-msvc/release/foton-handoff.exe"
+          $text = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes($exe))
+          $bad = @("VCRUNTIME140.dll", "MSVCP140.dll", "libgcc_s_seh-1.dll", "libwinpthread-1.dll") |
+            Where-Object { $text.Contains($_) }
+          if ($bad) {
+            Write-Error ("dynamic runtime dependency found: " + ($bad -join ", "))
+            exit 1
+          }
+          "no dynamic C/C++ runtime dependency in $exe"
+      - name: e2e suite
+        shell: pwsh
+        run: ../scripts/e2e-windows.ps1 -Bin ./target/aarch64-pc-windows-msvc/release/foton-handoff.exe
+      - name: upload binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: foton-handoff-windows-arm64
+          path: foton-handoff-src/target/aarch64-pc-windows-msvc/release/foton-handoff.exe
           if-no-files-found: error
 
   linux-musl:
@@ -160,7 +269,7 @@ jobs:
 
   release:
     name: release
-    needs: [linux, windows, linux-musl, linux-musl-arm64]
+    needs: [linux, windows, windows-arm64, linux-musl, linux-musl-arm64]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -176,6 +285,11 @@ jobs:
         with:
           name: foton-handoff-windows
           path: dist/windows
+      - name: download windows arm64 binary
+        uses: actions/download-artifact@v8
+        with:
+          name: foton-handoff-windows-arm64
+          path: dist/windows-arm64
       - name: download linux musl binary
         uses: actions/download-artifact@v8
         with:
@@ -194,15 +308,16 @@ jobs:
           set -euo pipefail
           mv dist/linux/foton-handoff dist/foton-handoff-linux
           mv dist/windows/foton-handoff.exe dist/foton-handoff-windows.exe
+          mv dist/windows-arm64/foton-handoff.exe dist/foton-handoff-windows-arm64.exe
           mv dist/linux-musl/foton-handoff dist/foton-handoff-linux-musl
           mv dist/linux-arm64-musl/foton-handoff dist/foton-handoff-linux-arm64-musl
           chmod +x dist/foton-handoff-linux dist/foton-handoff-linux-musl dist/foton-handoff-linux-arm64-musl
           cd dist
-          sha256sum foton-handoff-linux foton-handoff-windows.exe \
+          sha256sum foton-handoff-linux foton-handoff-windows.exe foton-handoff-windows-arm64.exe \
             foton-handoff-linux-musl foton-handoff-linux-arm64-musl > SHA256SUMS.txt
           gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "$TAG" \
             --generate-notes \
-            foton-handoff-linux foton-handoff-windows.exe \
+            foton-handoff-linux foton-handoff-windows.exe foton-handoff-windows-arm64.exe \
             foton-handoff-linux-musl foton-handoff-linux-arm64-musl SHA256SUMS.txt

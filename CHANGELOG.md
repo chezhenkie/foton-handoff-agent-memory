@@ -2,6 +2,14 @@
 
 All notable changes to foton-handoff. Dates are UTC.
 
+## v0.1.5 - 2026-10-24
+
+- Added a Windows ARM64 build: new `windows-arm64` CI job on the native `windows-11-arm` runner builds `aarch64-pc-windows-msvc` with `+crt-static`, asserts the PE machine type is `0xAA64`, checks the version resource, runs the 14-group e2e suite natively and uploads the artifact. The release job publishes it as `foton-handoff-windows-arm64.exe` and includes it in `SHA256SUMS.txt`.
+- Added a Windows version resource (`build.rs`, build dependency `tauri-winres`). The exe properties now carry `FileDescription`, `ProductName`, `CompanyName`, `LegalCopyright`, `OriginalFilename`, `InternalName`, `Comments`, and `FileVersion` / `ProductVersion` derived from `Cargo.toml`.
+- Both Windows jobs fail the build if the version resource fields or the version number are missing or wrong.
+- README, build/test instructions and e2e guide updated for the fifth target and the version resource.
+- Version bumped to 0.1.5 in `Cargo.toml` and `Cargo.lock`.
+
 ## v0.1.4 - 2026-10-24
 
 - Fixed: `SHA256SUMS.txt` recorded `dist/` path prefixes, so `sha256sum -c` failed when the downloaded assets sat in one folder. The release job now generates the sums inside `dist/` with bare filenames. The v0.1.3 hash values were correct; only the recorded paths were wrong.

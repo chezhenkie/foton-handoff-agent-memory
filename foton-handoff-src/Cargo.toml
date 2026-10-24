@@ -1,6 +1,6 @@
 [package]
 name = "foton-handoff"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 description = "foton-handoff - automated handoff read/write"
 
@@ -14,6 +14,9 @@ path = "src/main.rs"
 
 [dependencies]
 chrono = "=0.4.45"
+
+[build-dependencies]
+tauri-winres = "=0.3.7"
 
 [profile.release]
 lto = true

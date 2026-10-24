@@ -5,10 +5,16 @@ Rust implementation of the foton-handoff CLI.
 ## Build
 
 Shipped builds come from CI. `.github/workflows/build.yml` builds Linux glibc,
-static Linux musl (x86_64 and aarch64) and Windows (native MSVC,
-`+crt-static`) on every push and pull request; a `v*` tag publishes the
+static Linux musl (x86_64 and aarch64) and Windows (x86_64 and arm64, native
+MSVC, `+crt-static`) on every push and pull request; a `v*` tag publishes the
 binaries as a GitHub Release. The tag name follows `Cargo.toml`, so keep
 `Cargo.toml`, `Cargo.lock` and `CHANGELOG.md` in step.
+
+Windows builds embed a version resource (`build.rs` via `tauri-winres`): product
+metadata in the file properties and `FileVersion` / `ProductVersion` derived from
+`Cargo.toml`. The resource compiler is found automatically -- `rc.exe` from the
+Windows SDK for MSVC targets, mingw-w64 `windres` for GNU targets. Set `RC` to
+override.
 
 A local build is optional and needs only the toolchain pinned in
 `rust-toolchain.toml`:
@@ -31,8 +37,12 @@ RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target x86_64-
 ```
 
 The cross-target linker is named in `.cargo/config.toml` and must exist in
-`PATH`. Self-contained executable is mandatory: the Windows binary must have no
-external DLL dependencies.
+`PATH`; the matching `windres` is needed for the version resource. Self-contained
+executable is mandatory: the Windows binary must have no external DLL
+dependencies.
+
+The ARM64 Windows binary is built by CI only, on the native `windows-11-arm`
+runner with `aarch64-pc-windows-msvc`.
 
 ## Usage
 
@@ -64,7 +74,9 @@ CI runs the full suite on Linux and Windows: `cargo fmt --check`,
 `cargo clippy --all-targets -- -D warnings`, `cargo test`, a release build, and
 the matching e2e script. The two static musl jobs build their own target, fail
 if the ELF has a dynamic interpreter (`PT_INTERP`), and run the same e2e suite;
-the aarch64 job runs it on a native arm64 runner.
+the aarch64 job runs it on a native arm64 runner. The Windows arm64 job does the
+same on a native arm64 runner, additionally asserting the PE machine type and
+the version resource fields.
 
 The same checks run locally without CI:
 

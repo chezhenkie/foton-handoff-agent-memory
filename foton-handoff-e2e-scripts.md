@@ -82,6 +82,7 @@ explicitly:
 - Linux musl job:   `bash ../scripts/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-handoff`
 - Linux arm64 musl: `bash ../scripts/e2e-linux.sh ./target/aarch64-unknown-linux-musl/release/foton-handoff`
 - Windows job:      `../scripts/e2e-windows.ps1 -Bin ./target/release/foton-handoff.exe`
+- Windows arm64 job: `../scripts/e2e-windows.ps1 -Bin ./target/aarch64-pc-windows-msvc/release/foton-handoff.exe`
 
 A failing suite step fails the whole job. The same checks also run locally via
 `scripts/build-and-test-all.sh`, which runs fmt, clippy, unit tests, both

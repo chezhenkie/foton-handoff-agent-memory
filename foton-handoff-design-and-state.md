@@ -90,6 +90,7 @@ foton-handoff-proj/
 │   ├── .gitignore
 │   ├── Cargo.lock
 │   ├── Cargo.toml
+│   ├── build.rs
 │   ├── rust-toolchain.toml
 │   ├── src\
 │   │   ├── commands.rs
@@ -137,11 +138,11 @@ foton-handoff-proj/
 - Strict `parse_args()` in `src/main.rs`: rejects unknown flags, enforces exactly one positional, validates non-empty project; 15 unit tests. 33 total unit tests (18 lib + 15 main).
 - Both e2e suites at 14 groups, both platforms fully green. Linux: fmt, clippy -D warnings, 33 unit tests, release build, 14 e2e groups. Windows: mingw-w64 cross-build from Linux with static CRT, 14 e2e groups.
 - Root is hardcoded to exe directory via `current_exe()`. No env vars, no CWD influence. Agent has zero control over storage location.
-- Project lives on the public remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds four targets and publishes tag builds as Releases; local builds are optional, build output lives under `foton-handoff-src/target/`, and a local copy can be dropped into `release/` -- the project root itself never holds a binary.
-- `.github/workflows/build.yml` runs fmt, Clippy, unit tests, release build and e2e on Linux and Windows for every push and pull request to `main`, and uploads both binaries as artifacts. Two static musl jobs (`ubuntu-latest` x86_64, `ubuntu-24.04-arm` aarch64) build their own target, fail on a dynamic interpreter (`PT_INTERP`) and run the e2e suite natively. A `v*` tag push additionally runs the `release` job: it downloads all four artifacts, renames them to `foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-linux-musl` and `foton-handoff-linux-arm64-musl`, writes `SHA256SUMS.txt`, and publishes a GitHub Release. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
+- Project lives on the public remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds five targets and publishes tag builds as Releases; local builds are optional, build output lives under `foton-handoff-src/target/`, and a local copy can be dropped into `release/` -- the project root itself never holds a binary.
+- `.github/workflows/build.yml` runs fmt, Clippy, unit tests, release build and e2e on Linux and Windows for every push and pull request to `main`, and uploads both x86_64 binaries as artifacts. Two static musl jobs (`ubuntu-latest` x86_64, `ubuntu-24.04-arm` aarch64) build their own target, fail on a dynamic interpreter (`PT_INTERP`) and run the e2e suite natively. A `windows-arm64` job (`windows-11-arm`) builds `aarch64-pc-windows-msvc`, asserts the PE machine type and version resource, and runs the suite natively. A `v*` tag push additionally runs the `release` job: it downloads all five artifacts, renames them to `foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-windows-arm64.exe`, `foton-handoff-linux-musl` and `foton-handoff-linux-arm64-musl`, writes `SHA256SUMS.txt`, and publishes a GitHub Release. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
 - Local build-and-test orchestrator added: `scripts/build-and-test-all.sh` runs fmt, clippy, unit tests, both builds (Linux native + Windows cross-compile), both e2e suites, and both speedtests in one command. Stops on first failure.
 - Speedtest scripts added: `scripts/speedtest-linux.sh` and `scripts/speedtest-windows.ps1` run 7 benchmark scenarios (startup, read with 10/1k/5k files, write with 10/1k files, write -n with 1k files) following the speedtest methodology rules (no cross-filesystem testing).
-- Current source-truth version: v0.1.4 (Cargo.toml) and CHANGELOG.
+- Current source-truth version: v0.1.5 (Cargo.toml) and CHANGELOG.
 - Agent prompt finalized (chained-memory wording, mandatory dry-run-first rule with stop-and-ask on error, session start/end triggers); embedded verbatim in README (top section) and in this doc. Pasting it into AGENTS.md is a user action.
 
 **Next session** : none planned. Pending user action: paste the agent prompt into AGENTS.md files with the real exe path substituted.
@@ -198,3 +199,10 @@ foton-handoff-proj/
 - Release job publishes four binaries plus `SHA256SUMS.txt`; the glibc build remains `foton-handoff-linux`.
 - Version bumped to 0.1.3 in `Cargo.toml` and `Cargo.lock`; CHANGELOG entry added.
 - v0.1.3 published all four assets. Verification found `SHA256SUMS.txt` recorded `dist/` path prefixes, so `sha256sum -c` failed once the assets were downloaded into one folder; the hash values themselves were correct. The release job now writes the sums inside `dist/` with bare filenames, and v0.1.4 re-releases all four assets with a verifiable sums file.
+
+### 14. Completed (this session)
+- Windows ARM64 target added. New `windows-arm64` job on `windows-11-arm` (arm64 hosted runner) builds `aarch64-pc-windows-msvc` against pinned 1.98.0 with `RUSTFLAGS=-C target-feature=+crt-static`, resolves an SDK `rc.exe` into `RC` before the build, asserts the PE machine field is `0xAA64`, asserts the version resource, runs the 14-group e2e suite natively, and uploads `foton-handoff-windows-arm64`. The release job publishes it as `foton-handoff-windows-arm64.exe` and includes it in `SHA256SUMS.txt`; five assets now.
+- Windows version resource added via `build.rs` and the pinned build dependency `tauri-winres = "=0.3.7"`. Fields: `FileDescription`, `ProductName`, `CompanyName`, `LegalCopyright`, `OriginalFilename`, `InternalName`, `Comments`; `FileVersion` and `ProductVersion` are derived from `Cargo.toml` (fixed info `0.1.5.0`, string `0.1.5`). Language 0x0409, `FILEOS`/`FILETYPE` left at the crate defaults.
+- Resource compilation path is host-detected: MSVC targets use the Windows SDK or VS `rc.exe`, GNU targets use mingw-w64 `windres`; `RC` overrides. The x86_64 mingw cross-build was verified locally: `windres` produced the resource, and the exe reports the expected fields and version.
+- Both Windows CI jobs gained a `version resource check` step that reads the binary back through `System.Diagnostics.FileVersionInfo` and fails on a missing or wrong field, or a version mismatch against `Cargo.toml`.
+- Version bumped to 0.1.5 in `Cargo.toml` and `Cargo.lock`; README, build/test instructions, e2e guide and CHANGELOG updated.

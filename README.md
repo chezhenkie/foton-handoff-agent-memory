@@ -94,7 +94,7 @@ control over the storage location: no environment variables, no CWD influence.
 
 ## Build
 
-CI builds four targets. Every push and pull request runs the check and test
+CI builds five targets. Every push and pull request runs the check and test
 matrix in `.github/workflows/build.yml`:
 
 - `linux` - Ubuntu x86_64, glibc, dynamically linked. fmt, Clippy, unit tests,
@@ -103,12 +103,20 @@ matrix in `.github/workflows/build.yml`:
   e2e.
 - `linux-musl-arm64` - `aarch64-unknown-linux-musl` on a native arm64 runner,
   static. Build, interpreter check, e2e.
-- `windows` - native MSVC with `+crt-static`. fmt, Clippy, unit tests, release
-  build, static CRT check, e2e.
+- `windows` - native MSVC x86_64 with `+crt-static`. fmt, Clippy, unit tests,
+  release build, version resource check, static CRT check, e2e.
+- `windows-arm64` - `aarch64-pc-windows-msvc` on a native arm64 runner with
+  `+crt-static`. Build, PE machine check, version resource check, static CRT
+  check, e2e.
 
-A `v*` tag then publishes all four binaries as a GitHub Release. No local
+A `v*` tag then publishes all five binaries as a GitHub Release. No local
 toolchain is needed to produce a shipped build, and the build host is unrelated
 to the machine the binary runs on.
+
+Windows binaries carry a version resource: `build.rs` embeds `FileDescription`,
+`ProductName`, `CompanyName`, `LegalCopyright`, `OriginalFilename`,
+`InternalName` and `Comments`, with `FileVersion` and `ProductVersion` taken
+from `Cargo.toml`.
 
 A local build is optional and needs only the toolchain pinned in
 `foton-handoff-src/rust-toolchain.toml`:
@@ -128,12 +136,16 @@ cargo build --release --target x86_64-unknown-linux-musl
 
 Cross-building the Windows .exe from a non-Windows host needs the
 `x86_64-pc-windows-gnu` target, a mingw-w64 linker named in
-`foton-handoff-src/.cargo/config.toml`, and a static C runtime:
+`foton-handoff-src/.cargo/config.toml`, a mingw-w64 `windres`, and a static C
+runtime:
 
 ```bash
 RUSTFLAGS="-C target-feature=+crt-static" \
   cargo build --release --target x86_64-pc-windows-gnu
 ```
+
+The ARM64 Windows binary is produced only by CI on the native arm64 runner; the
+MSVC resource and linker toolchain is not reproduced on a cross host.
 
 Build output stays under `foton-handoff-src/target/`. `release/` at the project
 root is an optional local drop point for built binaries and is gitignored; the
@@ -165,6 +177,7 @@ foton-handoff-proj/
 |   |   +-- store.rs
 |   +-- Cargo.toml
 |   +-- Cargo.lock
+|   +-- build.rs
 |   +-- rust-toolchain.toml
 |   +-- .gitignore
 +-- release/                     (gitignored)
@@ -224,11 +237,15 @@ GitHub Actions workflow `.github/workflows/build.yml` on the public repository
 `https://github.com/chezhenkie/foton-handoff-agent-memory` (branch `main`):
 fmt, Clippy `-D warnings`, unit tests, release build, e2e suite, and a static
 CRT check on Windows; the two musl jobs run their own release build, interpreter
-check and e2e suite. All four binaries are uploaded as artifacts. A push of a
-`v*` tag runs the same jobs and then publishes a GitHub Release with
-`foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-linux-musl`,
-`foton-handoff-linux-arm64-musl` and `SHA256SUMS.txt`. CI is the only source of
-shipped binaries; local runs are a development convenience.
+check and e2e suite; the Windows arm64 job builds the MSVC ARM64 target on a
+native arm64 runner and checks the PE machine type. All five binaries are
+uploaded as artifacts. A push of a `v*` tag runs the same jobs and then
+publishes a GitHub Release with `foton-handoff-linux`,
+`foton-handoff-windows.exe`, `foton-handoff-windows-arm64.exe`,
+`foton-handoff-linux-musl`, `foton-handoff-linux-arm64-musl` and
+`SHA256SUMS.txt`. CI is the only source of shipped binaries; local runs are a
+development convenience.
 
-Dependencies are locked (`chrono = "=0.4.45"`, pinned toolchain, checked-in
-`Cargo.lock`) for reproducible builds. Current source-truth version: v0.1.4.
+Dependencies are locked (`chrono = "=0.4.45"`, `tauri-winres = "=0.3.7"` as a
+build dependency, pinned toolchain, checked-in `Cargo.lock`) for reproducible
+builds. Current source-truth version: v0.1.5.
