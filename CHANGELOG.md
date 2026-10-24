@@ -2,21 +2,18 @@
 
 All notable changes to foton-handoff. Dates are UTC.
 
-## Unreleased
+## v0.1.2 - 2026-08-22 (rebuilt and re-released 2026-10-24)
 
+- `read` on a project with no memory exits 1 and prints a two-line agent instruction on stderr: no memory yet (normal on first use), proceed to write with a dry-run (`-n`) first, and it is mandatory to tell the user to manually check the project's handoff folder before any write.
+- Agent prompt reworked: documents follow a fixed section structure; `<project>` is the exact name of the current project folder.
+- Docs updated: README, design/state doc, e2e scripts guide.
 - Source folder renamed `foton-handoff/` -> `foton-handoff-src/`; `instructions-for-building-and-testing.md` moved from the crate folder to the project root; scripts, CI and docs follow the new paths.
 - `release/` added at the project root as the ship location for both binaries (`foton-handoff`, `foton-handoff.exe`), gitignored. Build output stays under `foton-handoff-src/target/`; the project root itself holds no binary.
 - Private GitHub remote `chezhenkie/foton-handoff-agent-memory` with a CI workflow: `fmt`, Clippy `-D warnings`, unit tests, release build and e2e suite on Linux and Windows, a static CRT check on Windows, and both binaries uploaded as artifacts.
 - `.gitattributes` normalizes text files to LF so CI checkouts match local builds.
 - `Cargo.lock` version corrected from `0.1.0` to `0.1.2` to match `Cargo.toml`.
-- Tag-triggered release job restored in `.github/workflows/build.yml`: a `v*` tag push runs both build jobs, then publishes `foton-handoff-linux`, `foton-handoff-windows.exe` and `SHA256SUMS.txt` to a GitHub Release with generated notes.
+- Tag-triggered release job restored in `.github/workflows/build.yml`: a `v*` tag push runs both build jobs, then publishes `foton-handoff-linux`, `foton-handoff-windows.exe` and `SHA256SUMS.txt` to a GitHub Release with generated notes. Tag `v0.1.2` published those three assets.
 - Actions bumped to current majors: `actions/checkout@v7`, `actions/upload-artifact@v7`, `actions/download-artifact@v8` (Node 24 runtime, removes the v4 deprecation annotation).
-
-## v0.1.2 - 2026-08-22
-
-- `read` on a project with no memory exits 1 and prints a two-line agent instruction on stderr: no memory yet (normal on first use), proceed to write with a dry-run (`-n`) first, and it is mandatory to tell the user to manually check the project's handoff folder before any write.
-- Agent prompt reworked: documents follow a fixed section structure; `<project>` is the exact name of the current project folder.
-- Docs updated: README, design/state doc, e2e scripts guide.
 
 ## v0.1.1 - 2026-08-22
 
