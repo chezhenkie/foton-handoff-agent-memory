@@ -203,8 +203,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-window
 GitHub Actions workflow `.github/workflows/build.yml` on the private repository
 `https://github.com/chezhenkie/foton-handoff-agent-memory` (branch `main`):
 `fmt`, Clippy `-D warnings`, unit tests, release build, e2e suite, and a static
-CRT check on Windows; both binaries are uploaded as artifacts. Local builds and
-tests still run in WSL via `scripts/build-and-test-all.sh`.
+CRT check on Windows; both binaries are uploaded as artifacts. A push of a `v*`
+tag runs the same jobs and then publishes a GitHub Release with
+`foton-handoff-linux`, `foton-handoff-windows.exe` and `SHA256SUMS.txt`. Local
+builds and tests still run in WSL via `scripts/build-and-test-all.sh`.
 
 Dependencies are locked (`chrono = "=0.4.45"`, pinned toolchain, checked-in
 `Cargo.lock`) for reproducible builds. Current source-truth version: v0.1.2.
