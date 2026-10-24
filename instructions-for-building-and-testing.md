@@ -4,16 +4,24 @@ Rust implementation of the foton-handoff CLI.
 
 ## Build
 
-Shipped builds come from CI. `.github/workflows/build.yml` builds Linux (native)
-and Windows (native MSVC, `+crt-static`) on every push and pull request; a `v*`
-tag publishes both binaries as a GitHub Release. The tag name follows
-`Cargo.toml`, so keep `Cargo.toml`, `Cargo.lock` and `CHANGELOG.md` in step.
+Shipped builds come from CI. `.github/workflows/build.yml` builds Linux glibc,
+static Linux musl (x86_64 and aarch64) and Windows (native MSVC,
+`+crt-static`) on every push and pull request; a `v*` tag publishes the
+binaries as a GitHub Release. The tag name follows `Cargo.toml`, so keep
+`Cargo.toml`, `Cargo.lock` and `CHANGELOG.md` in step.
 
 A local build is optional and needs only the toolchain pinned in
 `rust-toolchain.toml`:
 
 ```text
 cargo build --release
+```
+
+Static Linux musl build (self-contained target, no external musl toolchain):
+
+```text
+rustup target add x86_64-unknown-linux-musl
+cargo build --release --target x86_64-unknown-linux-musl
 ```
 
 **Windows cross-build (mandatory static linking):**
@@ -52,9 +60,11 @@ foton-handoff write myproject -n < draft.md
 
 ## Testing
 
-CI runs the full suite on both platforms: `cargo fmt --check`,
+CI runs the full suite on Linux and Windows: `cargo fmt --check`,
 `cargo clippy --all-targets -- -D warnings`, `cargo test`, a release build, and
-the matching e2e script.
+the matching e2e script. The two static musl jobs build their own target, fail
+if the ELF has a dynamic interpreter (`PT_INTERP`), and run the same e2e suite;
+the aarch64 job runs it on a native arm64 runner.
 
 The same checks run locally without CI:
 
@@ -77,6 +87,12 @@ project-root `scripts/` directory:
 
 ```text
 bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
+```
+
+The same script accepts a static musl binary:
+
+```text
+bash ../scripts/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-handoff
 ```
 
 ## Windows e2e

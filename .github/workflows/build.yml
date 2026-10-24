@@ -90,9 +90,77 @@ jobs:
           path: foton-handoff-src/target/release/foton-handoff.exe
           if-no-files-found: error
 
+  linux-musl:
+    name: linux-musl
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: foton-handoff-src
+    steps:
+      - uses: actions/checkout@v7
+      - name: install toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.98.0
+      - name: add musl target
+        run: rustup target add x86_64-unknown-linux-musl
+      - name: release build (static musl)
+        run: cargo build --release --target x86_64-unknown-linux-musl
+      - name: static link check
+        run: |
+          bin=target/x86_64-unknown-linux-musl/release/foton-handoff
+          file "$bin"
+          if readelf -l "$bin" | grep -q INTERP; then
+            echo "dynamic interpreter present in $bin" >&2
+            exit 1
+          fi
+          echo "no dynamic interpreter in $bin"
+      - name: e2e suite
+        run: bash ../scripts/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-handoff
+      - name: upload binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: foton-handoff-linux-musl
+          path: foton-handoff-src/target/x86_64-unknown-linux-musl/release/foton-handoff
+          if-no-files-found: error
+
+  linux-musl-arm64:
+    name: linux-musl-arm64
+    runs-on: ubuntu-24.04-arm
+    defaults:
+      run:
+        working-directory: foton-handoff-src
+    steps:
+      - uses: actions/checkout@v7
+      - name: install toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.98.0
+      - name: add musl target
+        run: rustup target add aarch64-unknown-linux-musl
+      - name: release build (static musl)
+        run: cargo build --release --target aarch64-unknown-linux-musl
+      - name: static link check
+        run: |
+          bin=target/aarch64-unknown-linux-musl/release/foton-handoff
+          file "$bin"
+          if readelf -l "$bin" | grep -q INTERP; then
+            echo "dynamic interpreter present in $bin" >&2
+            exit 1
+          fi
+          echo "no dynamic interpreter in $bin"
+      - name: e2e suite
+        run: bash ../scripts/e2e-linux.sh ./target/aarch64-unknown-linux-musl/release/foton-handoff
+      - name: upload binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: foton-handoff-linux-arm64-musl
+          path: foton-handoff-src/target/aarch64-unknown-linux-musl/release/foton-handoff
+          if-no-files-found: error
+
   release:
     name: release
-    needs: [linux, windows]
+    needs: [linux, windows, linux-musl, linux-musl-arm64]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -108,6 +176,16 @@ jobs:
         with:
           name: foton-handoff-windows
           path: dist/windows
+      - name: download linux musl binary
+        uses: actions/download-artifact@v8
+        with:
+          name: foton-handoff-linux-musl
+          path: dist/linux-musl
+      - name: download linux arm64 musl binary
+        uses: actions/download-artifact@v8
+        with:
+          name: foton-handoff-linux-arm64-musl
+          path: dist/linux-arm64-musl
       - name: publish release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -116,10 +194,14 @@ jobs:
           set -euo pipefail
           mv dist/linux/foton-handoff dist/foton-handoff-linux
           mv dist/windows/foton-handoff.exe dist/foton-handoff-windows.exe
-          chmod +x dist/foton-handoff-linux
-          sha256sum dist/foton-handoff-linux dist/foton-handoff-windows.exe > dist/SHA256SUMS.txt
+          mv dist/linux-musl/foton-handoff dist/foton-handoff-linux-musl
+          mv dist/linux-arm64-musl/foton-handoff dist/foton-handoff-linux-arm64-musl
+          chmod +x dist/foton-handoff-linux dist/foton-handoff-linux-musl dist/foton-handoff-linux-arm64-musl
+          sha256sum dist/foton-handoff-linux dist/foton-handoff-windows.exe \
+            dist/foton-handoff-linux-musl dist/foton-handoff-linux-arm64-musl > dist/SHA256SUMS.txt
           gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "$TAG" \
             --generate-notes \
-            dist/foton-handoff-linux dist/foton-handoff-windows.exe dist/SHA256SUMS.txt
+            dist/foton-handoff-linux dist/foton-handoff-windows.exe \
+            dist/foton-handoff-linux-musl dist/foton-handoff-linux-arm64-musl dist/SHA256SUMS.txt

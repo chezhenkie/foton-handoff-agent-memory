@@ -137,11 +137,11 @@ foton-handoff-proj/
 - Strict `parse_args()` in `src/main.rs`: rejects unknown flags, enforces exactly one positional, validates non-empty project; 15 unit tests. 33 total unit tests (18 lib + 15 main).
 - Both e2e suites at 14 groups, both platforms fully green. Linux: fmt, clippy -D warnings, 33 unit tests, release build, 14 e2e groups. Windows: mingw-w64 cross-build from Linux with static CRT, 14 e2e groups.
 - Root is hardcoded to exe directory via `current_exe()`. No env vars, no CWD influence. Agent has zero control over storage location.
-- Project lives on the private remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds both targets and publishes tag builds as Releases; local builds are optional, build output lives under `foton-handoff-src/target/`, and a local copy can be dropped into `release/` -- the project root itself never holds a binary.
-- `.github/workflows/build.yml` runs fmt, Clippy, unit tests, release build and e2e on Linux and Windows for every push and pull request to `main`, and uploads both binaries as artifacts. A `v*` tag push additionally runs the `release` job: it downloads both artifacts, renames them to `foton-handoff-linux` / `foton-handoff-windows.exe`, writes `SHA256SUMS.txt`, and publishes a GitHub Release. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
+- Project lives on the public remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds four targets and publishes tag builds as Releases; local builds are optional, build output lives under `foton-handoff-src/target/`, and a local copy can be dropped into `release/` -- the project root itself never holds a binary.
+- `.github/workflows/build.yml` runs fmt, Clippy, unit tests, release build and e2e on Linux and Windows for every push and pull request to `main`, and uploads both binaries as artifacts. Two static musl jobs (`ubuntu-latest` x86_64, `ubuntu-24.04-arm` aarch64) build their own target, fail on a dynamic interpreter (`PT_INTERP`) and run the e2e suite natively. A `v*` tag push additionally runs the `release` job: it downloads all four artifacts, renames them to `foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-linux-musl` and `foton-handoff-linux-arm64-musl`, writes `SHA256SUMS.txt`, and publishes a GitHub Release. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
 - Local build-and-test orchestrator added: `scripts/build-and-test-all.sh` runs fmt, clippy, unit tests, both builds (Linux native + Windows cross-compile), both e2e suites, and both speedtests in one command. Stops on first failure.
 - Speedtest scripts added: `scripts/speedtest-linux.sh` and `scripts/speedtest-windows.ps1` run 7 benchmark scenarios (startup, read with 10/1k/5k files, write with 10/1k files, write -n with 1k files) following the speedtest methodology rules (no cross-filesystem testing).
-- Current source-truth version: v0.1.2 (Cargo.toml) and CHANGELOG.
+- Current source-truth version: v0.1.3 (Cargo.toml) and CHANGELOG.
 - Agent prompt finalized (chained-memory wording, mandatory dry-run-first rule with stop-and-ask on error, session start/end triggers); embedded verbatim in README (top section) and in this doc. Pasting it into AGENTS.md is a user action.
 
 **Next session** : none planned. Pending user action: paste the agent prompt into AGENTS.md files with the real exe path substituted.
@@ -190,3 +190,10 @@ foton-handoff-proj/
 - README reworked: rationale intro (isolation, internal archive logic, minimal arg surface), agent prompt moved to top section, layout tree made relative and includes workflow files, badge/CI fixed to `release.yml`.
 - Agent prompt embedded verbatim in README and this doc; `.gitattributes` added pinning shell/PS line endings.
 - All three release bodies rewritten with distinct `## Changes` sections (v0.1.0 initial, v0.1.1 CI validation, v0.1.2 stderr instruction); release workflow now prepends an auto-generated `## Changes` list from `git log <prev-tag>..<tag>` above the template on every future tag (release checkout uses `fetch-depth: 0`).
+
+### 13. Completed (this session)
+- Repository flipped to public (`gh repo edit --visibility public`); README, CI section and e2e guide no longer describe a private remote.
+- CI extended with `linux-musl` (`x86_64-unknown-linux-musl` on `ubuntu-latest`) and `linux-musl-arm64` (`aarch64-unknown-linux-musl` on `ubuntu-24.04-arm`, the arm64 hosted runner for public repositories). Both build with `rustup target add` against pinned 1.98.0, fail on a dynamic interpreter (`PT_INTERP`), and run the 14-group e2e suite; arm64 runs natively.
+- Self-contained musl linking confirmed with toolchain 1.98.0: the `x86_64-unknown-linux-musl` release build is static-pie, 475,760 B, no interpreter, and passes a write/read smoke test. No external musl toolchain (`musl-tools`) needed.
+- Release job publishes four binaries plus `SHA256SUMS.txt`; the glibc build remains `foton-handoff-linux`.
+- Version bumped to 0.1.3 in `Cargo.toml` and `Cargo.lock`; CHANGELOG entry added.

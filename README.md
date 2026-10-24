@@ -94,11 +94,21 @@ control over the storage location: no environment variables, no CWD influence.
 
 ## Build
 
-CI builds both targets. Every push and pull request runs the full check and test
-matrix on Linux (native) and Windows (native MSVC, `+crt-static`) in
-`.github/workflows/build.yml`; a `v*` tag then publishes the two binaries as a
-GitHub Release. No local toolchain is needed to produce a shipped build, and the
-build host is unrelated to the machine the binary runs on.
+CI builds four targets. Every push and pull request runs the check and test
+matrix in `.github/workflows/build.yml`:
+
+- `linux` - Ubuntu x86_64, glibc, dynamically linked. fmt, Clippy, unit tests,
+  release build, e2e.
+- `linux-musl` - `x86_64-unknown-linux-musl`, static. Build, interpreter check,
+  e2e.
+- `linux-musl-arm64` - `aarch64-unknown-linux-musl` on a native arm64 runner,
+  static. Build, interpreter check, e2e.
+- `windows` - native MSVC with `+crt-static`. fmt, Clippy, unit tests, release
+  build, static CRT check, e2e.
+
+A `v*` tag then publishes all four binaries as a GitHub Release. No local
+toolchain is needed to produce a shipped build, and the build host is unrelated
+to the machine the binary runs on.
 
 A local build is optional and needs only the toolchain pinned in
 `foton-handoff-src/rust-toolchain.toml`:
@@ -106,6 +116,14 @@ A local build is optional and needs only the toolchain pinned in
 ```bash
 cd foton-handoff-src
 cargo build --release
+```
+
+A static Linux build uses the self-contained musl target; no external musl
+toolchain is required:
+
+```bash
+rustup target add x86_64-unknown-linux-musl
+cargo build --release --target x86_64-unknown-linux-musl
 ```
 
 Cross-building the Windows .exe from a non-Windows host needs the
@@ -118,7 +136,7 @@ RUSTFLAGS="-C target-feature=+crt-static" \
 ```
 
 Build output stays under `foton-handoff-src/target/`. `release/` at the project
-root is an optional local drop point for both binaries and is gitignored; the
+root is an optional local drop point for built binaries and is gitignored; the
 project root itself never holds a binary.
 
 ## Project layout
@@ -168,9 +186,9 @@ binary.
 ## Testing
 
 `scripts/build-and-test-all.sh` runs the local suite in one pass: fmt, Clippy,
-unit tests, both builds, both e2e suites, both speedtests. It resolves the crate
-path from its own location and needs a bash host; the Windows steps call
-`powershell.exe`, so they only run where PowerShell is available.
+unit tests, the glibc and musl builds, both e2e suites, both speedtests. It
+resolves the crate path from its own location and needs a bash host; the Windows
+steps call `powershell.exe`, so they only run where PowerShell is available.
 
 ```bash
 bash scripts/build-and-test-all.sh
@@ -202,13 +220,15 @@ bash scripts/speedtest-linux.sh <path-to-foton-handoff>
 
 ## CI
 
-GitHub Actions workflow `.github/workflows/build.yml` on the private repository
+GitHub Actions workflow `.github/workflows/build.yml` on the public repository
 `https://github.com/chezhenkie/foton-handoff-agent-memory` (branch `main`):
-`fmt`, Clippy `-D warnings`, unit tests, release build, e2e suite, and a static
-CRT check on Windows; both binaries are uploaded as artifacts. A push of a `v*`
-tag runs the same jobs and then publishes a GitHub Release with
-`foton-handoff-linux`, `foton-handoff-windows.exe` and `SHA256SUMS.txt`. CI is
-the only source of shipped binaries; local runs are a development convenience.
+fmt, Clippy `-D warnings`, unit tests, release build, e2e suite, and a static
+CRT check on Windows; the two musl jobs run their own release build, interpreter
+check and e2e suite. All four binaries are uploaded as artifacts. A push of a
+`v*` tag runs the same jobs and then publishes a GitHub Release with
+`foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-linux-musl`,
+`foton-handoff-linux-arm64-musl` and `SHA256SUMS.txt`. CI is the only source of
+shipped binaries; local runs are a development convenience.
 
 Dependencies are locked (`chrono = "=0.4.45"`, pinned toolchain, checked-in
-`Cargo.lock`) for reproducible builds. Current source-truth version: v0.1.2.
+`Cargo.lock`) for reproducible builds. Current source-truth version: v0.1.3.

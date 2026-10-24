@@ -2,6 +2,14 @@
 
 All notable changes to foton-handoff. Dates are UTC.
 
+## v0.1.3 - 2026-10-24
+
+- Repository made public: `https://github.com/chezhenkie/foton-handoff-agent-memory`.
+- CI adds two static musl builds: `linux-musl` (x86_64 on `ubuntu-latest`) and `linux-musl-arm64` (aarch64 on `ubuntu-24.04-arm`). Each builds with `rustup target add`, fails if the ELF has a dynamic interpreter (`PT_INTERP`), and runs the 14-group e2e suite; the arm64 suite runs natively.
+- Release assets now include `foton-handoff-linux-musl` and `foton-handoff-linux-arm64-musl`; `SHA256SUMS.txt` covers all four binaries. The glibc Linux build is unchanged and remains the default `foton-handoff-linux`.
+- README, build/test instructions, e2e guide and design notes updated for the public repository and the musl targets.
+- Version bumped to 0.1.3 in `Cargo.toml` and `Cargo.lock`; no code changes.
+
 ## v0.1.2 - 2026-08-22 (rebuilt and re-released 2026-10-24)
 
 - `read` on a project with no memory exits 1 and prints a two-line agent instruction on stderr: no memory yet (normal on first use), proceed to write with a dry-run (`-n`) first, and it is mandatory to tell the user to manually check the project's handoff folder before any write.

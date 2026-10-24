@@ -75,11 +75,13 @@ the default candidates exist.
 ### CI integration
 
 `.github/workflows/build.yml` runs both suites as dedicated steps in their
-build jobs on the private remote, always passing the freshly built binary
+build jobs on the public remote, always passing the freshly built binary
 explicitly:
 
-- Linux job:   `bash ../scripts/e2e-linux.sh ./target/release/foton-handoff`
-- Windows job: `../scripts/e2e-windows.ps1 -Bin ./target/release/foton-handoff.exe`
+- Linux job:        `bash ../scripts/e2e-linux.sh ./target/release/foton-handoff`
+- Linux musl job:   `bash ../scripts/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-handoff`
+- Linux arm64 musl: `bash ../scripts/e2e-linux.sh ./target/aarch64-unknown-linux-musl/release/foton-handoff`
+- Windows job:      `../scripts/e2e-windows.ps1 -Bin ./target/release/foton-handoff.exe`
 
 A failing suite step fails the whole job. The same checks also run locally via
 `scripts/build-and-test-all.sh`, which runs fmt, clippy, unit tests, both

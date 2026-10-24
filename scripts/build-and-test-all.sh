@@ -71,4 +71,19 @@ SPEEDTEST_WIN=$(wslpath -w "$SCRIPT_DIR/speedtest-windows.ps1")
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$SPEEDTEST_WIN" -Bin "$WIN_BIN_WIN"
 echo ""
 
+echo "=== Step 10: Build Linux musl (static) ==="
+rustup target add x86_64-unknown-linux-musl >/dev/null
+cargo build --release --target x86_64-unknown-linux-musl
+MUSL_BIN="$CRATE_DIR/target/x86_64-unknown-linux-musl/release/foton-handoff"
+if [ ! -f "$MUSL_BIN" ]; then
+  echo "FAIL: musl binary not found at $MUSL_BIN" >&2
+  exit 1
+fi
+echo "OK: $MUSL_BIN"
+echo ""
+
+echo "=== Step 11: Linux musl e2e tests ==="
+bash "$SCRIPT_DIR/e2e-linux.sh" "$MUSL_BIN"
+echo ""
+
 echo "=== ALL STEPS COMPLETED ==="
