@@ -78,7 +78,7 @@ Mandatory:
 ## Directory tree project
 
 ```
-foton-handoff-proj\
+foton-handoff-proj/
 ├── agents.md
 ├── README.md
 ├── foton-handoff-design-and-state.md
@@ -114,7 +114,7 @@ foton-handoff-proj\
 - Functional baseline established first without touching code: the original `foton-handoff.exe` passed a 13-group e2e suite covering commit, read, dry-run, archive moves, same-minute `-2` collision suffixes, cross-project isolation, case-insensitive matching, exit codes 0/1/2 with stderr messages, empty-stdin rejection, `HANDOFF_ROOT` override, and CWD fallback.
 - Code audit then drove targeted fixes: stale module comment corrected (root was `HANDOFF_ROOT` else CWD, later fixed to exe-folder-relative); empty/whitespace project names rejected with exit 2 instead of writing unmatchable `{stamp}_.md` files; instructions doc e2e commands corrected to state the crate-folder CWD assumption.
 - e2e suites extended to 15 groups on both platforms (group 14: empty-project rejection writes nothing; group 15: invalid-HANDOFF_ROOT warning plus fallback). Linux suite fully green end-to-end: fmt --check, clippy -D warnings, 19 unit tests, release build, all 15 groups.
-- Local verification environment established without git/GitHub: WSL Ubuntu distro running rustup with the pinned 1.98.0 toolchain (+rustfmt/clippy) and build-essential. No local Rust on Windows; cross-build via mingw-w64 considered but intentionally not started.
+- Local verification environment established without git/GitHub: Linux (Ubuntu) host with rustup, the pinned 1.98.0 toolchain (+rustfmt/clippy) and build-essential. Cross-build via mingw-w64 considered but intentionally not started.
 - Windows verification deferred by decision: the project-root `foton-handoff.exe` predates groups 14/15 and fails them by design; replacing it awaits a fresh build and explicit approval.
 - Platform test pair lives at the project root as the single source of truth: `scripts/e2e-windows.ps1` and `scripts/e2e-linux.sh`, identical group numbering, both auto-resolve their binary; Linux candidate detection hardened to require a regular executable file (a directory named like the crate previously matched).
 - Test-harness lessons: PS 5.1 can swallow merged native stderr depending on error-action mode, so stderr assertions capture to a file; PS 5.1 additionally drops truly empty-string arguments when calling native executables, so empty-name cases may degrade to the missing-argument path (same exit 2).
@@ -123,7 +123,7 @@ foton-handoff-proj\
 - Strict argument parsing implemented: `parse_args()` extracted into a pure function in `src/main.rs`; unknown dash-flags rejected (`error: unknown flag`); exactly one positional enforced (`too many arguments (quote the project name)` / `requires a project name`); non-empty validation kept; errors print message + usage, exit 2. 15 unit tests cover valid forms, flag positions, unknown flags, wrong positional counts, whitespace-only project, case-insensitive subcommands.
 - e2e suites extended to 16 groups on both platforms (group 16: negative strict-parsing cases `commit -x alpha` / `commit alpha junk` / `read --verbose alpha` exit 2 with nothing written; positive multi-word round-trip `commit "multi word"` -> `read "multi word"`). Linux suite fully green end-to-end: fmt --check, clippy -D warnings, 34 unit tests (19 lib + 15 main), release build, all 16 groups.
 - Quoting convention documented in `instructions-for-building-and-testing.md`: *Always pass the project name quoted (`"proj_name"`), multi-word names included.*
-- Windows cross-build completed via mingw-w64 in WSL: `x86_64-pc-windows-gnu` target added to pinned 1.98.0 toolchain, `.cargo/config.toml` sets linker to `x86_64-w64-mingw32-gcc`. Fresh `foton-handoff.exe` replaces project-root binary; all 16 Windows e2e groups pass.
+- Windows cross-build completed via mingw-w64 from Linux: `x86_64-pc-windows-gnu` target added to pinned 1.98.0 toolchain, `.cargo/config.toml` sets linker to `x86_64-w64-mingw32-gcc`. Fresh `foton-handoff.exe` replaces project-root binary; all 16 Windows e2e groups pass.
 - Security isolation fix completed: `HANDOFF_ROOT` env var removed entirely from `src/paths.rs`. Root is now hardcoded to `std::env::current_exe()` parent directory. Store functions refactored to accept `root: &Path` parameter for testability -- no env vars, no global state. E2e scripts copy binary to temp root before running. E2e groups 13 (HANDOFF_ROOT override) and 15 (invalid-HANDOFF_ROOT warning) removed. Both suites at 14 groups, both platforms fully green. 33 unit tests (18 lib + 15 main).
 - Binary size review done without code changes: release exe measured at ~1.4 MB
   (static CRT, mingw-w64 cross-build). Size-reduction profile options evaluated
@@ -133,11 +133,11 @@ foton-handoff-proj\
 - Package/bin renamed to `foton-handoff`, lib to `foton_handoff_core`; old names swept from src.
 - Subcommand `commit` renamed to `write` across code, docs, and e2e scripts to avoid confusion with Git/GitHub commits.
 - Release binary shrunk via `[profile.release]` (`lto = true`, `codegen-units = 1`, `opt-level = "s"`, `strip = true`). Windows exe now ~339 KB (was ~1.4 MB); Linux release binary ~375 KB.
-- Local verification environment established: WSL Ubuntu distro, rustup with pinned 1.98.0 toolchain + rustfmt/clippy + mingw-w64 cross-compiler, build-essential installed.
+- Local verification environment established: Linux (Ubuntu) host with rustup, pinned 1.98.0 toolchain, rustfmt/clippy, mingw-w64 cross-compiler and build-essential.
 - Strict `parse_args()` in `src/main.rs`: rejects unknown flags, enforces exactly one positional, validates non-empty project; 15 unit tests. 33 total unit tests (18 lib + 15 main).
-- Both e2e suites at 14 groups, both platforms fully green. Linux: fmt, clippy -D warnings, 33 unit tests, release build, 14 e2e groups. Windows: mingw-w64 cross-build from WSL with static CRT, 14 e2e groups.
+- Both e2e suites at 14 groups, both platforms fully green. Linux: fmt, clippy -D warnings, 33 unit tests, release build, 14 e2e groups. Windows: mingw-w64 cross-build from Linux with static CRT, 14 e2e groups.
 - Root is hardcoded to exe directory via `current_exe()`. No env vars, no CWD influence. Agent has zero control over storage location.
-- Project lives on the private remote `chezhenkie/foton-handoff-agent-memory` (branch `main`); binaries are built locally in WSL, build output lives under `foton-handoff-src/target/`, and the two ship binaries are copied to `release/` -- the project root itself never holds a binary.
+- Project lives on the private remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds both targets and publishes tag builds as Releases; local builds are optional, build output lives under `foton-handoff-src/target/`, and a local copy can be dropped into `release/` -- the project root itself never holds a binary.
 - `.github/workflows/build.yml` runs fmt, Clippy, unit tests, release build and e2e on Linux and Windows for every push and pull request to `main`, and uploads both binaries as artifacts. A `v*` tag push additionally runs the `release` job: it downloads both artifacts, renames them to `foton-handoff-linux` / `foton-handoff-windows.exe`, writes `SHA256SUMS.txt`, and publishes a GitHub Release. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
 - Local build-and-test orchestrator added: `scripts/build-and-test-all.sh` runs fmt, clippy, unit tests, both builds (Linux native + Windows cross-compile), both e2e suites, and both speedtests in one command. Stops on first failure.
 - Speedtest scripts added: `scripts/speedtest-linux.sh` and `scripts/speedtest-windows.ps1` run 7 benchmark scenarios (startup, read with 10/1k/5k files, write with 10/1k files, write -n with 1k files) following the speedtest methodology rules (no cross-filesystem testing).
@@ -154,7 +154,7 @@ foton-handoff-proj\
 - e2e group 16 added to both platform scripts: negative strict-parsing cases exit 2 with nothing written; positive multi-word round-trip locks quoting convention.
 - Quoting convention documented in `instructions-for-building-and-testing.md`.
 - Linux verification green: fmt --check, clippy -D warnings, 34 unit tests, release build, 16 e2e groups.
-- Windows cross-build completed via mingw-w64 in WSL; all 16 groups pass.
+- Windows cross-build completed via mingw-w64 from Linux; all 16 groups pass.
 
 ### 7-9. Completed (this session)
 - `HANDOFF_ROOT` env var removed from `src/paths.rs`. Root is `current_exe()` parent, fallback to CWD.

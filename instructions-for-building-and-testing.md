@@ -4,11 +4,17 @@ Rust implementation of the foton-handoff CLI.
 
 ## Build
 
+Shipped builds come from CI. `.github/workflows/build.yml` builds Linux (native)
+and Windows (native MSVC, `+crt-static`) on every push and pull request; a `v*`
+tag publishes both binaries as a GitHub Release. The tag name follows
+`Cargo.toml`, so keep `Cargo.toml`, `Cargo.lock` and `CHANGELOG.md` in step.
+
+A local build is optional and needs only the toolchain pinned in
+`rust-toolchain.toml`:
+
 ```text
 cargo build --release
 ```
-
-Requires the pinned toolchain in `rust-toolchain.toml`.
 
 **Windows cross-build (mandatory static linking):**
 
@@ -16,7 +22,9 @@ Requires the pinned toolchain in `rust-toolchain.toml`.
 RUSTFLAGS="-C target-feature=+crt-static" cargo build --release --target x86_64-pc-windows-gnu
 ```
 
-Self-contained executable is mandatory. The Windows binary must have no external DLL dependencies.
+The cross-target linker is named in `.cargo/config.toml` and must exist in
+`PATH`. Self-contained executable is mandatory: the Windows binary must have no
+external DLL dependencies.
 
 ## Usage
 
@@ -44,12 +52,22 @@ foton-handoff write myproject -n < draft.md
 
 ## Testing
 
+CI runs the full suite on both platforms: `cargo fmt --check`,
+`cargo clippy --all-targets -- -D warnings`, `cargo test`, a release build, and
+the matching e2e script.
+
+The same checks run locally without CI:
+
 ```text
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test
 cargo build --release
 ```
+
+`scripts/build-and-test-all.sh` runs all of that plus both builds, both e2e
+suites and both speedtests in one pass from a bash host; the Windows steps call
+`powershell.exe`, so they only run where PowerShell is available.
 
 ## Linux e2e
 
@@ -66,7 +84,7 @@ bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
 After building, run the smoke test on Windows, again from the crate folder:
 
 ```text
-powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin .\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin <path-to-foton-handoff.exe>
 ```
 
 `-Bin` is optional when the release build sits at its default location.

@@ -10,7 +10,10 @@ echo "Project root: $PROJ_ROOT"
 echo "Crate dir: $CRATE_DIR"
 echo ""
 
-source $HOME/.cargo/env
+if [ -f "$HOME/.cargo/env" ]; then
+  # shellcheck disable=SC1091
+  . "$HOME/.cargo/env"
+fi
 
 cd "$CRATE_DIR"
 

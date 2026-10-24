@@ -94,87 +94,89 @@ control over the storage location: no environment variables, no CWD influence.
 
 ## Build
 
-Builds run in WSL2; the Windows host has no Rust toolchain. Requires the Rust
-toolchain pinned in `rust-toolchain.toml`.
+CI builds both targets. Every push and pull request runs the full check and test
+matrix on Linux (native) and Windows (native MSVC, `+crt-static`) in
+`.github/workflows/build.yml`; a `v*` tag then publishes the two binaries as a
+GitHub Release. No local toolchain is needed to produce a shipped build, and the
+build host is unrelated to the machine the binary runs on.
 
-One command builds both targets, runs all tests, and runs speedtests:
-
-```bash
-wsl -d Ubuntu -- bash -c 'source $HOME/.cargo/env && cd foton-handoff-proj && bash scripts/build-and-test-all.sh'
-```
-
-Or run the steps manually:
+A local build is optional and needs only the toolchain pinned in
+`foton-handoff-src/rust-toolchain.toml`:
 
 ```bash
-cd foton-handoff-proj/foton-handoff-src
-source $HOME/.cargo/env
+cd foton-handoff-src
 cargo build --release
 ```
 
-The Windows .exe is a cross-build and must statically link the C runtime:
+Cross-building the Windows .exe from a non-Windows host needs the
+`x86_64-pc-windows-gnu` target, a mingw-w64 linker named in
+`foton-handoff-src/.cargo/config.toml`, and a static C runtime:
 
 ```bash
 RUSTFLAGS="-C target-feature=+crt-static" \
   cargo build --release --target x86_64-pc-windows-gnu
 ```
 
-The built binaries stay in the crate `target/` folder; the two ship binaries are
-copied to `release/`. A GitHub Actions workflow (`.github/workflows/build.yml`)
-runs the same checks on the private remote
-`chezhenkie/foton-handoff-agent-memory`; local builds still run in WSL.
+Build output stays under `foton-handoff-src/target/`. `release/` at the project
+root is an optional local drop point for both binaries and is gitignored; the
+project root itself never holds a binary.
 
 ## Project layout
 
 ```text
-foton-handoff-proj\
-├── .github\
-│   └── workflows\
-│       └── build.yml
-├── .gitignore
-├── agents.md                    (gitignored)
-├── README.md
-├── foton-handoff-design-and-state.md
-├── foton-handoff-e2e-scripts.md
-├── foton-handoff-performance-benchmarks.md
-├── instructions-for-building-and-testing.md
-├── foton-handoff-src\
-│   ├── .cargo\
-│   │   └── config.toml
-│   ├── src\
-│   │   ├── commands.rs
-│   │   ├── lib.rs
-│   │   ├── main.rs
-│   │   ├── parse.rs
-│   │   ├── paths.rs
-│   │   └── store.rs
-│   ├── Cargo.toml
-│   ├── Cargo.lock
-│   ├── rust-toolchain.toml
-│   └── .gitignore
-├── release\                     (gitignored)
-│   ├── foton-handoff
-│   └── foton-handoff.exe
-└── scripts\
-    ├── build-and-test-all.sh
-    ├── e2e-linux.sh
-    ├── e2e-windows.ps1
-    ├── speedtest-linux.sh
-    └── speedtest-windows.ps1
+foton-handoff-proj/
++-- .github/
+|   +-- workflows/
+|       +-- build.yml
++-- .gitignore
++-- agents.md                    (gitignored)
++-- README.md
++-- foton-handoff-design-and-state.md
++-- foton-handoff-e2e-scripts.md
++-- foton-handoff-performance-benchmarks.md
++-- instructions-for-building-and-testing.md
++-- foton-handoff-src/
+|   +-- .cargo/
+|   |   +-- config.toml
+|   +-- src/
+|   |   +-- commands.rs
+|   |   +-- lib.rs
+|   |   +-- main.rs
+|   |   +-- parse.rs
+|   |   +-- paths.rs
+|   |   +-- store.rs
+|   +-- Cargo.toml
+|   +-- Cargo.lock
+|   +-- rust-toolchain.toml
+|   +-- .gitignore
++-- release/                     (gitignored)
+|   +-- foton-handoff
+|   +-- foton-handoff.exe
++-- scripts/
+    +-- build-and-test-all.sh
+    +-- e2e-linux.sh
+    +-- e2e-windows.ps1
+    +-- speedtest-linux.sh
+    +-- speedtest-windows.ps1
 ```
 
-Binaries are not tracked by git; they are built locally in WSL, released into
-`release\`, and stay under `foton-handoff-src/target/` as build output. The
-project root itself never holds a binary.
+Binaries are not tracked by git. CI builds and publishes them as Releases; a
+local build can be dropped into `release/` for convenience. Build output stays
+under `foton-handoff-src/target/`, and the project root itself never holds a
+binary.
 
 ## Testing
 
-Run all checks, builds, e2e tests, and speedtests in one command:
+`scripts/build-and-test-all.sh` runs the local suite in one pass: fmt, Clippy,
+unit tests, both builds, both e2e suites, both speedtests. It resolves the crate
+path from its own location and needs a bash host; the Windows steps call
+`powershell.exe`, so they only run where PowerShell is available.
 
 ```bash
-wsl -d Ubuntu -- bash -c 'source $HOME/.cargo/env && cd foton-handoff-proj && bash scripts/build-and-test-all.sh'
+bash scripts/build-and-test-all.sh
 ```
 
-Or run individual steps:
+Individual steps:
 
 ```bash
 cd foton-handoff-src
@@ -185,17 +187,17 @@ cargo build --release
 bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
 ```
 
-Windows e2e:
+Windows e2e and speedtest take the path of the Windows binary:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin .\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 -Bin <path-to-foton-handoff.exe>
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-windows.ps1 -Bin <path-to-foton-handoff.exe>
 ```
 
-Speedtests (run from WSL):
+Linux speedtest:
 
 ```bash
-bash scripts/speedtest-linux.sh foton-handoff-src/target/release/foton-handoff
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-windows.ps1 -Bin foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
+bash scripts/speedtest-linux.sh <path-to-foton-handoff>
 ```
 
 ## CI
@@ -205,8 +207,8 @@ GitHub Actions workflow `.github/workflows/build.yml` on the private repository
 `fmt`, Clippy `-D warnings`, unit tests, release build, e2e suite, and a static
 CRT check on Windows; both binaries are uploaded as artifacts. A push of a `v*`
 tag runs the same jobs and then publishes a GitHub Release with
-`foton-handoff-linux`, `foton-handoff-windows.exe` and `SHA256SUMS.txt`. Local
-builds and tests still run in WSL via `scripts/build-and-test-all.sh`.
+`foton-handoff-linux`, `foton-handoff-windows.exe` and `SHA256SUMS.txt`. CI is
+the only source of shipped binaries; local runs are a development convenience.
 
 Dependencies are locked (`chrono = "=0.4.45"`, pinned toolchain, checked-in
 `Cargo.lock`) for reproducible builds. Current source-truth version: v0.1.2.

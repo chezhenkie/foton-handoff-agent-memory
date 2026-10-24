@@ -27,14 +27,17 @@ Scaling behavior: linear in directory size as expected from the scan (`matching_
 Two scripts reproduce these benchmarks on demand:
 
 ```bash
-bash scripts/speedtest-linux.sh foton-handoff-src/target/release/foton-handoff
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-windows.ps1 -Bin foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
+bash scripts/speedtest-linux.sh <path-to-foton-handoff>
+```
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-windows.ps1 -Bin <path-to-foton-handoff.exe>
 ```
 
 Or run both via the orchestrator (which also runs fmt, clippy, unit tests, builds, and e2e suites):
 
 ```bash
-wsl -d Ubuntu -- bash -c 'source $HOME/.cargo/env && cd foton-handoff-proj && bash scripts/build-and-test-all.sh'
+bash scripts/build-and-test-all.sh
 ```
 
 The Linux speedtest copies the binary to `/tmp/` (native ext4); the Windows speedtest copies to `%TEMP%\opencode\` (NTFS). This follows the speedtest methodology rules: no cross-filesystem testing.
