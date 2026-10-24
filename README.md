@@ -97,8 +97,16 @@ control over the storage location: no environment variables, no CWD influence.
 Builds run in WSL2; the Windows host has no Rust toolchain. Requires the Rust
 toolchain pinned in `rust-toolchain.toml`.
 
+One command builds both targets, runs all tests, and runs speedtests:
+
 ```bash
-cd foton-handoff-proj/foton-handoff
+wsl -d Ubuntu -- bash -c 'source $HOME/.cargo/env && cd foton-handoff-proj && bash scripts/build-and-test-all.sh'
+```
+
+Or run the steps manually:
+
+```bash
+cd foton-handoff-proj/foton-handoff-src
 source $HOME/.cargo/env
 cargo build --release
 ```
@@ -110,9 +118,9 @@ RUSTFLAGS="-C target-feature=+crt-static" \
   cargo build --release --target x86_64-pc-windows-gnu
 ```
 
-The fresh `foton-handoff.exe` is then copied to the project root. A CI workflow
-(`.github/workflows/build.yml`) is kept for when the repo gains a remote again;
-until then all builds are local (WSL).
+The built binaries stay in the crate `target/` folder; nothing is copied to the
+project root. A CI workflow (`.github/workflows/build.yml`) is kept for when the
+repo gains a remote again; until then all builds are local (WSL).
 
 ## Project layout
 
@@ -124,11 +132,11 @@ foton-handoff-proj\
 ├── .gitignore
 ├── agents.md                    (gitignored)
 ├── README.md
-├── foton-handoff.exe            (gitignored, built locally)
 ├── foton-handoff-design-and-state.md
 ├── foton-handoff-e2e-scripts.md
 ├── foton-handoff-performance-benchmarks.md
-├── foton-handoff\
+├── instructions-for-building-and-testing.md
+├── foton-handoff-src\
 │   ├── .cargo\
 │   │   └── config.toml
 │   ├── src\
@@ -141,20 +149,34 @@ foton-handoff-proj\
 │   ├── Cargo.toml
 │   ├── Cargo.lock
 │   ├── rust-toolchain.toml
-│   ├── .gitignore
-│   └── instructions-for-building-and-testing.md
+│   └── .gitignore
+├── release\                     (gitignored)
+│   ├── foton-handoff
+│   └── foton-handoff.exe
 └── scripts\
+    ├── build-and-test-all.sh
     ├── e2e-linux.sh
-    └── e2e-windows.ps1
+    ├── e2e-windows.ps1
+    ├── speedtest-linux.sh
+    └── speedtest-windows.ps1
 ```
 
-The executable itself is not tracked; it is built locally in WSL and copied to
-the project root.
+Binaries are not tracked by git; they are built locally in WSL, released into
+`release\`, and stay under `foton-handoff-src/target/` as build output. The
+project root itself never holds a binary.
 
 ## Testing
 
+Run all checks, builds, e2e tests, and speedtests in one command:
+
 ```bash
-cd foton-handoff
+wsl -d Ubuntu -- bash -c 'source $HOME/.cargo/env && cd foton-handoff-proj && bash scripts/build-and-test-all.sh'
+```
+
+Or run individual steps:
+
+```bash
+cd foton-handoff-src
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test
@@ -165,7 +187,14 @@ bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
 Windows e2e:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin .\target\release\foton-handoff.exe
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin .\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
+```
+
+Speedtests (run from WSL):
+
+```bash
+bash scripts/speedtest-linux.sh foton-handoff-src/target/release/foton-handoff
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-windows.ps1 -Bin foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
 ```
 
 ## CI

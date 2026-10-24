@@ -5,8 +5,8 @@
 #   bash scripts/e2e-linux.sh [path/to/foton-handoff]
 #
 # With no argument, these candidates are tried relative to this script's folder:
-#   ../foton-handoff
-#   ../foton-handoff/target/release/foton-handoff
+#   ../release/foton-handoff
+#   ../foton-handoff-src/target/release/foton-handoff
 #   ../target/release/foton-handoff
 set -e
 
@@ -14,8 +14,8 @@ BIN="${1:-}"
 if [ -z "$BIN" ]; then
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   for cand in \
-    "$SCRIPT_DIR/../foton-handoff" \
-    "$SCRIPT_DIR/../foton-handoff/target/release/foton-handoff" \
+    "$SCRIPT_DIR/../release/foton-handoff" \
+    "$SCRIPT_DIR/../foton-handoff-src/target/release/foton-handoff" \
     "$SCRIPT_DIR/../target/release/foton-handoff"; do
     if [ -f "$cand" ] && [ -x "$cand" ]; then BIN="$cand"; break; fi
   done

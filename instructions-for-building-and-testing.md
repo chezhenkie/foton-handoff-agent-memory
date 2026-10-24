@@ -54,8 +54,8 @@ cargo build --release
 ## Linux e2e
 
 After building, run the smoke test on Linux. Commands assume the current
-directory is this crate folder (`foton-handoff/`); the scripts live in the
-sibling project-root `scripts/` directory:
+directory is the crate folder (`foton-handoff-src/`); the scripts live in the
+project-root `scripts/` directory:
 
 ```text
 bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
@@ -63,10 +63,10 @@ bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
 
 ## Windows e2e
 
-After building, run the smoke test on Windows, again from this crate folder:
+After building, run the smoke test on Windows, again from the crate folder:
 
 ```text
-powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin .\target\release\foton-handoff.exe
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin .\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
 ```
 
 `-Bin` is optional when the release build sits at its default location.

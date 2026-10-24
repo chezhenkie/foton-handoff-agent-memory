@@ -45,13 +45,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 [-Bi
 ```
 
 If `-Bin` is omitted, the script tries these candidates relative to the
-script's own folder (`$PSScriptRoot`), in order, and uses the first that exists:
+script's own folder (`$PSScriptRoot`), in order, and uses the first that exists.
+Binaries ship from `release\`; build output stays in the crate target folder,
+never in the project root:
 
 ```
-..\foton-handoff.exe
-..\foton-handoff-win11.exe
-..\foton-handoff\target\release\foton-handoff.exe
-..\target\release\foton-handoff.exe
+..\release\foton-handoff.exe
+..\foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
+..\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
 ```
 
 ### Linux
@@ -63,8 +64,8 @@ bash scripts/e2e-linux.sh [path/to/foton-handoff]
 If the argument is omitted, candidates tried relative to the script folder are:
 
 ```
-../foton-handoff
-../foton-handoff/target/release/foton-handoff
+../release/foton-handoff
+../foton-handoff-src/target/release/foton-handoff
 ../target/release/foton-handoff
 ```
 
@@ -77,11 +78,13 @@ the default candidates exist.
 build jobs when a remote is re-added under a new account, always passing the
 freshly built binary explicitly:
 
-- Linux job:   `bash scripts/e2e-linux.sh foton-handoff/target/release/foton-handoff`
+- Linux job:   `bash scripts/e2e-linux.sh foton-handoff-src/target/release/foton-handoff`
 - Windows job: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 -Bin <staged exe>`
 
 A failing suite step fails the whole job. Until the repo gains a remote again,
-both suites run locally against the WSL-built binaries.
+both suites run locally via `scripts/build-and-test-all.sh`, which runs fmt,
+clippy, unit tests, both builds, both e2e suites, and both speedtests in one
+command (stops on first failure).
 
 ---
 

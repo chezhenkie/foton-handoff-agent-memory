@@ -81,16 +81,15 @@ Mandatory:
 foton-handoff-proj\
 ├── agents.md
 ├── README.md
-├── foton-handoff.exe
 ├── foton-handoff-design-and-state.md
 ├── foton-handoff-performance-benchmarks.md
-├── foton-handoff\
+├── instructions-for-building-and-testing.md
+├── foton-handoff-src\
 │   ├── .cargo\
 │   │   └── config.toml
 │   ├── .gitignore
 │   ├── Cargo.lock
 │   ├── Cargo.toml
-│   ├── instructions-for-building-and-testing.md
 │   ├── rust-toolchain.toml
 │   ├── src\
 │   │   ├── commands.rs
@@ -100,9 +99,13 @@ foton-handoff-proj\
 │   │   ├── paths.rs
 │   │   └── store.rs
 │   └── target\          (build artifacts: debug\, release\, x86_64-pc-windows-gnu\)
+├── release\             (gitignored: foton-handoff, foton-handoff.exe)
 └── scripts\
+    ├── build-and-test-all.sh
     ├── e2e-linux.sh
-    └── e2e-windows.ps1
+    ├── e2e-windows.ps1
+    ├── speedtest-linux.sh
+    └── speedtest-windows.ps1
 ```
 
 
@@ -124,6 +127,7 @@ foton-handoff-proj\
 - Security isolation fix completed: `HANDOFF_ROOT` env var removed entirely from `src/paths.rs`. Root is now hardcoded to `std::env::current_exe()` parent directory. Store functions refactored to accept `root: &Path` parameter for testability -- no env vars, no global state. E2e scripts copy binary to temp root before running. E2e groups 13 (HANDOFF_ROOT override) and 15 (invalid-HANDOFF_ROOT warning) removed. Both suites at 14 groups, both platforms fully green. 33 unit tests (18 lib + 15 main).
 - Binary size review done without code changes: release exe measured at ~1.4 MB
   (static CRT, mingw-w64 cross-build). Size-reduction profile options evaluated
+- Repository hygiene change: the project-root `foton-handoff.exe` was deleted and is no longer produced. Binaries now live only in the crate `target/` folder (Windows `target/x86_64-pc-windows-gnu/release/`, Linux `target/release/`). Script default paths, README, and the e2e scripts guide updated to match; no binary is ever copied to the project root.
 
 **Current state** :
 - Package/bin renamed to `foton-handoff`, lib to `foton_handoff_core`; old names swept from src.
@@ -133,8 +137,10 @@ foton-handoff-proj\
 - Strict `parse_args()` in `src/main.rs`: rejects unknown flags, enforces exactly one positional, validates non-empty project; 15 unit tests. 33 total unit tests (18 lib + 15 main).
 - Both e2e suites at 14 groups, both platforms fully green. Linux: fmt, clippy -D warnings, 33 unit tests, release build, 14 e2e groups. Windows: mingw-w64 cross-build from WSL with static CRT, 14 e2e groups.
 - Root is hardcoded to exe directory via `current_exe()`. No env vars, no CWD influence. Agent has zero control over storage location.
-- Project lives on no remote. Local git re-initialized on `main` after account deletion; binaries are built locally in WSL -- the repo-root exe is gitignored.
+- Project lives on no remote. Local git re-initialized on `main` after account deletion; binaries are built locally in WSL, build output lives under `foton-handoff-src/target/`, and the two ship binaries are copied to `release/` -- the project root itself never holds a binary.
 - The old tag-triggered release workflow is gone with the deleted account. A plain CI workflow `.github/workflows/build.yml` (Clippy + tests + e2e + release builds, artifacts uploaded) is kept for when a remote is re-added under a new account.
+- Local build-and-test orchestrator added: `scripts/build-and-test-all.sh` runs fmt, clippy, unit tests, both builds (Linux native + Windows cross-compile), both e2e suites, and both speedtests in one command. Stops on first failure.
+- Speedtest scripts added: `scripts/speedtest-linux.sh` and `scripts/speedtest-windows.ps1` run 7 benchmark scenarios (startup, read with 10/1k/5k files, write with 10/1k files, write -n with 1k files) following the speedtest methodology rules (no cross-filesystem testing).
 - Current source-truth version: v0.1.2 (Cargo.toml) and CHANGELOG.
 - Agent prompt finalized (chained-memory wording, mandatory dry-run-first rule with stop-and-ask on error, session start/end triggers); embedded verbatim in README (top section) and in this doc. Pasting it into AGENTS.md is a user action.
 

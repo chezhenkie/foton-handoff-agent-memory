@@ -2,6 +2,10 @@
 
 All notable changes to foton-handoff. Dates are UTC.
 
+## Unreleased
+
+- Repository hygiene: the project-root `foton-handoff.exe` was removed. Binaries are now only produced under the crate `target/` folder (`target/release/foton-handoff` on Linux, `target/x86_64-pc-windows-gnu/release/foton-handoff.exe` on Windows) and are never copied to the project root. README, design/state doc, e2e scripts guide, and Windows e2e script defaults updated to match.
+
 ## v0.1.2 - 2026-08-22
 
 - `read` on a project with no memory exits 1 and prints a two-line agent instruction on stderr: no memory yet (normal on first use), proceed to write with a dry-run (`-n`) first, and it is mandatory to tell the user to manually check the project's handoff folder before any write.
