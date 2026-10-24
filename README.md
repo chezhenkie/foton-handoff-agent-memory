@@ -231,4 +231,4 @@ check and e2e suite. All four binaries are uploaded as artifacts. A push of a
 shipped binaries; local runs are a development convenience.
 
 Dependencies are locked (`chrono = "=0.4.45"`, pinned toolchain, checked-in
-`Cargo.lock`) for reproducible builds. Current source-truth version: v0.1.3.
+`Cargo.lock`) for reproducible builds. Current source-truth version: v0.1.4.

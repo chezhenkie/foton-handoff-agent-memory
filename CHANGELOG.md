@@ -2,6 +2,11 @@
 
 All notable changes to foton-handoff. Dates are UTC.
 
+## v0.1.4 - 2026-10-24
+
+- Fixed: `SHA256SUMS.txt` recorded `dist/` path prefixes, so `sha256sum -c` failed when the downloaded assets sat in one folder. The release job now generates the sums inside `dist/` with bare filenames. The v0.1.3 hash values were correct; only the recorded paths were wrong.
+- No code changes; version bumped in `Cargo.toml` and `Cargo.lock`.
+
 ## v0.1.3 - 2026-10-24
 
 - Repository made public: `https://github.com/chezhenkie/foton-handoff-agent-memory`.

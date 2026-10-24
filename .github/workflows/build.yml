@@ -197,11 +197,12 @@ jobs:
           mv dist/linux-musl/foton-handoff dist/foton-handoff-linux-musl
           mv dist/linux-arm64-musl/foton-handoff dist/foton-handoff-linux-arm64-musl
           chmod +x dist/foton-handoff-linux dist/foton-handoff-linux-musl dist/foton-handoff-linux-arm64-musl
-          sha256sum dist/foton-handoff-linux dist/foton-handoff-windows.exe \
-            dist/foton-handoff-linux-musl dist/foton-handoff-linux-arm64-musl > dist/SHA256SUMS.txt
+          cd dist
+          sha256sum foton-handoff-linux foton-handoff-windows.exe \
+            foton-handoff-linux-musl foton-handoff-linux-arm64-musl > SHA256SUMS.txt
           gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "$TAG" \
             --generate-notes \
-            dist/foton-handoff-linux dist/foton-handoff-windows.exe \
-            dist/foton-handoff-linux-musl dist/foton-handoff-linux-arm64-musl dist/SHA256SUMS.txt
+            foton-handoff-linux foton-handoff-windows.exe \
+            foton-handoff-linux-musl foton-handoff-linux-arm64-musl SHA256SUMS.txt
