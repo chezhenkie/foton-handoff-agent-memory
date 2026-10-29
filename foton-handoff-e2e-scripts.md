@@ -46,8 +46,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 [-Bi
 
 If `-Bin` is omitted, the script tries these candidates relative to the
 script's own folder (`$PSScriptRoot`), in order, and uses the first that exists.
-Binaries ship from `release\`; build output stays in the crate target folder,
-never in the project root:
+A local candidate can be dropped in the gitignored `release\` folder; build
+output stays in the crate target folder, never in the project root:
 
 ```
 ..\release\foton-handoff.exe
@@ -86,9 +86,10 @@ explicitly:
 - macOS arm64 job:  `bash ../scripts/e2e-linux.sh ./target/release/foton-handoff`
 
 A failing suite step fails the whole job. The same checks also run locally via
-`scripts/build-and-test-all.sh`, which runs fmt, clippy, unit tests, both
-builds, both e2e suites, and both speedtests in one command (stops on first
-failure).
+`scripts/build-and-test-all.sh`, which runs fmt, clippy, unit tests, three
+builds (Linux glibc native, Windows cross-compile, Linux musl), three e2e runs
+and two speedtests in one command (stops on first failure). It requires WSL with
+PowerShell interop (`wslpath`, `powershell.exe`), not a generic bash host.
 
 ---
 
@@ -120,7 +121,7 @@ Numbering below matches the `=== N. ... ===` banners printed by both scripts.
 |---|-------|--------------|----------|
 | 1 | write writes a handoff | Pipes `# Project Alpha` into `write alpha`; counts `*.md` in root | exit 0, exactly 1 md file |
 | 2 | read retrieves it | `read alpha`, compares full stdout | exit 0, output equals written text |
-| 3 | dry-run previews archive | `write alpha -n` with new text; checks output mentions "would archive:" and "would write:", checks `handoffarchive` stays empty | exit 0, nothing moved |
+| 3 | dry-run previews archive | `write alpha -n` with new text; checks output mentions "would archive:" and "would write:", does not name the target file, and checks `handoffarchive` stays empty | exit 0, nothing moved |
 | 4 | real write archives old and writes new | Repeats the write without `-n` | exit 0, >=1 archived alpha file, exactly 1 alpha md left in root |
 | 5 | read returns newest | `read alpha` again | exit 0, returns the second text |
 | 6 | same-minute collision gets -2 suffix | Third write to `alpha` within the same minute; the previous memory would collide with an existing archive filename | exit 0, exactly one `*alpha-2.md` in archive |
@@ -145,8 +146,11 @@ tree unchanged, i.e. rejected input must not create partial state.
 
 - `$ErrorActionPreference = "Stop"` globally, but temporarily lowered to
   `SilentlyContinue` around every invocation that is *expected* to fail
-  (groups 8, 11, 12, 13, 14), because PS 5.1 turns native stderr lines into
-  error records that would otherwise abort the script.
+  (groups 8, 11, 13, 14), because PS 5.1 turns native stderr lines into
+  error records that would otherwise abort the script. Group 10 sets
+  `Continue` while it redirects stdout and stderr to files. Group 12 does not
+  change the preference: it runs the exe through `Start-Process` with file
+  redirects.
 - Exit codes are read from `$LASTEXITCODE` immediately after each call.
 - Group 10 redirects stdout and stderr to files rather than relying on PS
   stream merging, since merged `2>&1` output cannot be reliably inspected for
@@ -193,4 +197,4 @@ When extending the suites:
    ```
 
 Success banner: `=== ALL WINDOWS E2E TESTS PASSED ===` /
-`=== ALL LINUX E2E TESTS PASSED ===`, exit code 0.
+`=== ALL E2E TESTS PASSED ===` (bash suite, Linux and macOS), exit code 0.

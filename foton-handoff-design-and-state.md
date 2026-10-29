@@ -7,16 +7,16 @@
 **Why this exists:** foton-handoff was built specifically so an LLM never touches
 the handoff files directly. Instead of giving a model free-form read/write
 access to its memory, the model only ever calls `read` and `write` through
-this CLI. That makes every change auditable, deterministic, and safe — a
+this CLI. That makes every change auditable, deterministic, and safe - a
 controlled interface layer between the LLM and its memory system.
 
 
 
 ## Binding Rules
 
-**Self-contained executable is mandatory.** The Windows build must be a single standalone binary with no external DLL dependencies. All builds must use `RUSTFLAGS="-C target-feature=+crt-static"` to statically link the C runtime. The executable must run on any Windows system without requiring additional runtime libraries.
+**Self-contained executable is mandatory on Windows.** The Windows builds (x86_64 MSVC and arm64 MSVC) must be single standalone binaries with no external DLL dependencies and use `RUSTFLAGS="-C target-feature=+crt-static"` to statically link the C runtime. The executable must run on any Windows system without requiring additional runtime libraries. The Linux glibc build is dynamically linked by design; the two musl builds are static.
 
-**Root resolution is hardcoded to the executable's directory. `handoffarchive/` is created as a sibling of the exe if it doesn't exist. The agent has zero control over where files are stored -- no environment variables, no CWD influence. All paths are relative to the exe location. Filenames use UTC datetime so they are identical across Windows, Linux, and CI.
+**Root resolution is the executable's directory. `handoffarchive/` is created as a sibling of the exe if it doesn't exist. `current_dir()` is used only if `current_exe()` fails. The agent has zero control over where files are stored -- no environment variables. All paths are relative to the exe location. Filenames use UTC datetime so they are identical across Windows, Linux, and CI.
 
 ## Functionality
 
@@ -24,8 +24,8 @@ controlled interface layer between the LLM and its memory system.
 - A handoff is identified solely by its filename: `{YYYY-MM-DD_HHMM}_{project}.md`.
 - `read <project>` prints the newest matching handoff to stdout.
 - `write <project>` reads new handoff text from stdin, archives every existing handoff for that project into `handoffarchive/`, then writes the new file.
-- Both subcommands accept `-n` / `--dry-run` to preview actions without changing anything.
-- Matching is exact and case-insensitive; file contents are never parsed.
+- `write -n` / `--dry-run` previews the archive moves and the write without changing anything; `read` accepts the flag and ignores it.
+- Matching normalizes both sides: trim, replace every character other than a letter, digit, `-`, `_` or space with `_`, turn spaces into `_`, keep the first 40 characters, compare case-insensitively. Distinct names can alias (`a/b` and `a?b`, or two long names sharing the first 40 characters). File contents are never parsed.
 - Same-minute name collisions get a `-2`, `-3` suffix in both the root and the archive.
 - Success is silent; errors are written to stderr.
 - `read` on a project with no memory exits 1 and prints a two-line agent instruction on stderr: no memory yet, proceed to write (dry-run -n first), and it is mandatory to tell the user to manually check the project's handoff folder before any write. Normal on first use.
@@ -79,38 +79,49 @@ Mandatory:
 
 ```
 foton-handoff-proj/
-├── agents.md
-├── README.md
-├── foton-handoff-design-and-state.md
-├── foton-handoff-performance-benchmarks.md
-├── instructions-for-building-and-testing.md
-├── foton-handoff-src\
-│   ├── .cargo\
-│   │   └── config.toml
-│   ├── .gitignore
-│   ├── Cargo.lock
-│   ├── Cargo.toml
-│   ├── build.rs
-│   ├── rust-toolchain.toml
-│   ├── src\
-│   │   ├── commands.rs
-│   │   ├── lib.rs
-│   │   ├── main.rs
-│   │   ├── parse.rs
-│   │   ├── paths.rs
-│   │   └── store.rs
-│   └── target\          (build artifacts: debug\, release\, x86_64-pc-windows-gnu\)
-├── release\             (gitignored: foton-handoff, foton-handoff.exe)
-└── scripts\
-    ├── build-and-test-all.sh
-    ├── e2e-linux.sh
-    ├── e2e-windows.ps1
-    ├── speedtest-linux.sh
-    └── speedtest-windows.ps1
++-- .github/
+|   +-- workflows/
+|       +-- build.yml
++-- .gitattributes
++-- .gitignore
++-- agents.md                    (gitignored)
++-- CHANGELOG.md
++-- README.md
++-- foton-handoff-design-and-state.md
++-- foton-handoff-docs-audit.md
++-- foton-handoff-e2e-scripts.md
++-- foton-handoff-performance-benchmarks.md
++-- instructions-for-building-and-testing.md
++-- foton-handoff-src/
+|   +-- .cargo/
+|   |   +-- config.toml
+|   +-- src/
+|   |   +-- commands.rs
+|   |   +-- lib.rs
+|   |   +-- main.rs
+|   |   +-- parse.rs
+|   |   +-- paths.rs
+|   |   +-- store.rs
+|   +-- Cargo.toml
+|   +-- Cargo.lock
+|   +-- build.rs
+|   +-- rust-toolchain.toml
+|   +-- .gitignore
+|   +-- target/                  (build artifacts, gitignored)
++-- release/                     (gitignored; e.g. v0.1.7/ with the six assets)
++-- scripts/
+    +-- build-and-test-all.sh
+    +-- e2e-linux.sh
+    +-- e2e-windows.ps1
+    +-- speedtest-linux.sh
+    +-- speedtest-windows.ps1
 ```
 
 
 ## Major findings and milestones
+
+Historical record; entries describe the state at the time of writing.
+
 - Project rebuilt from ground up in `foton-handoff-proj` after the previous local tree and its GitHub repository were lost. Documents were migrated first; source-code migration is now complete: `Cargo.toml` renamed (package/bin `foton-handoff`, lib `foton_handoff_core`), old identifiers and doc comments swept out of `src/`.
 - Functional baseline established first without touching code: the original `foton-handoff.exe` passed a 13-group e2e suite covering commit, read, dry-run, archive moves, same-minute `-2` collision suffixes, cross-project isolation, case-insensitive matching, exit codes 0/1/2 with stderr messages, empty-stdin rejection, `HANDOFF_ROOT` override, and CWD fallback.
 - Code audit then drove targeted fixes: stale module comment corrected (root was `HANDOFF_ROOT` else CWD, later fixed to exe-folder-relative); empty/whitespace project names rejected with exit 2 instead of writing unmatchable `{stamp}_.md` files; instructions doc e2e commands corrected to state the crate-folder CWD assumption.
@@ -119,7 +130,7 @@ foton-handoff-proj/
 - Windows verification deferred by decision: the project-root `foton-handoff.exe` predates groups 14/15 and fails them by design; replacing it awaits a fresh build and explicit approval.
 - Platform test pair lives at the project root as the single source of truth: `scripts/e2e-windows.ps1` and `scripts/e2e-linux.sh`, identical group numbering, both auto-resolve their binary; Linux candidate detection hardened to require a regular executable file (a directory named like the crate previously matched).
 - Test-harness lessons: PS 5.1 can swallow merged native stderr depending on error-action mode, so stderr assertions capture to a file; PS 5.1 additionally drops truly empty-string arguments when calling native executables, so empty-name cases may degrade to the missing-argument path (same exit 2).
-- Behavior notes confirmed against documentation: filename stamps are true UTC minutes; project names containing spaces are written with underscores (`my proj` becomes `_my_proj.md`) while `read` normalizes queries so lookups round-trip; a plain `write` always creates an empty `handoffarchive/` sibling even on the first write; `-n` dry-run touches nothing at all.
+- Behavior notes confirmed against documentation: filename stamps are true UTC minutes; project names containing spaces are written with underscores (`my proj` becomes `{date}_my_proj.md`) while `read` normalizes queries so lookups round-trip; a plain `write` always creates an empty `handoffarchive/` sibling even on the first write; `-n` dry-run touches nothing at all.
 - Carried over and verified present in current code: parse fix (`DATETIME_PREFIX_LEN` = `15 + 1` with per-position digit checks), `sanitize_topic` normalization fixing read/write round-trips for odd project names, unit tests for `parse` and `store` under mutex-guarded temp dirs with injected root, dependency pins (`chrono = "=0.4.45"`, toolchain `1.98.0`, regenerated lockfile), and cross-environment rules (UTC filenames, exe-relative root, no absolute paths in code).
 - Strict argument parsing implemented: `parse_args()` extracted into a pure function in `src/main.rs`; unknown dash-flags rejected (`error: unknown flag`); exactly one positional enforced (`too many arguments (quote the project name)` / `requires a project name`); non-empty validation kept; errors print message + usage, exit 2. 15 unit tests cover valid forms, flag positions, unknown flags, wrong positional counts, whitespace-only project, case-insensitive subcommands.
 - e2e suites extended to 16 groups on both platforms (group 16: negative strict-parsing cases `commit -x alpha` / `commit alpha junk` / `read --verbose alpha` exit 2 with nothing written; positive multi-word round-trip `commit "multi word"` -> `read "multi word"`). Linux suite fully green end-to-end: fmt --check, clippy -D warnings, 34 unit tests (19 lib + 15 main), release build, all 16 groups.
@@ -127,27 +138,27 @@ foton-handoff-proj/
 - Windows cross-build completed via mingw-w64 from Linux: `x86_64-pc-windows-gnu` target added to pinned 1.98.0 toolchain, `.cargo/config.toml` sets linker to `x86_64-w64-mingw32-gcc`. Fresh `foton-handoff.exe` replaces project-root binary; all 16 Windows e2e groups pass.
 - Security isolation fix completed: `HANDOFF_ROOT` env var removed entirely from `src/paths.rs`. Root is now hardcoded to `std::env::current_exe()` parent directory. Store functions refactored to accept `root: &Path` parameter for testability -- no env vars, no global state. E2e scripts copy binary to temp root before running. E2e groups 13 (HANDOFF_ROOT override) and 15 (invalid-HANDOFF_ROOT warning) removed. Both suites at 14 groups, both platforms fully green. 33 unit tests (18 lib + 15 main).
 - Binary size review done without code changes: release exe measured at ~1.4 MB
-  (static CRT, mingw-w64 cross-build). Size-reduction profile options evaluated
-- Repository hygiene change: the project-root `foton-handoff.exe` was deleted and is no longer produced. Binaries now live only in the crate `target/` folder (Windows `target/x86_64-pc-windows-gnu/release/`, Linux `target/release/`). Script default paths, README, and the e2e scripts guide updated to match; no binary is ever copied to the project root.
+  (static CRT, mingw-w64 cross-build); size-reduction profile options were evaluated.
+- Repository hygiene change: the project-root `foton-handoff.exe` was deleted and is no longer produced. Build output stays in the crate `target/` folder (Windows `target/x86_64-pc-windows-gnu/release/`, Linux `target/release/`). A built binary may be dropped into the gitignored `release/` folder; the project root itself never holds one. Script default paths, README and the e2e scripts guide were updated to match.
 
-**Current state** :
-- Package/bin renamed to `foton-handoff`, lib to `foton_handoff_core`; old names swept from src.
-- Subcommand `commit` renamed to `write` across code, docs, and e2e scripts to avoid confusion with Git/GitHub commits.
-- Release binary shrunk via `[profile.release]` (`lto = true`, `codegen-units = 1`, `opt-level = "s"`, `strip = true`). Windows exe now ~339 KB (was ~1.4 MB); Linux release binary ~375 KB.
-- Local verification environment established: Linux (Ubuntu) host with rustup, pinned 1.98.0 toolchain, rustfmt/clippy, mingw-w64 cross-compiler and build-essential.
-- Strict `parse_args()` in `src/main.rs`: rejects unknown flags, enforces exactly one positional, validates non-empty project; 15 unit tests. 33 total unit tests (18 lib + 15 main).
-- Both e2e suites at 14 groups, both platforms fully green. Linux: fmt, clippy -D warnings, 33 unit tests, release build, 14 e2e groups. Windows: mingw-w64 cross-build from Linux with static CRT, 14 e2e groups.
-- Root is hardcoded to exe directory via `current_exe()`. No env vars, no CWD influence. Agent has zero control over storage location.
-- Project lives on the public remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds six targets and publishes tag builds as Releases; local builds are optional, build output lives under `foton-handoff-src/target/`, and a local copy can be dropped into `release/` -- the project root itself never holds a binary.
-- `.github/workflows/build.yml` runs fmt, Clippy, unit tests, release build and e2e on Linux and Windows for every push and pull request to `main`, and uploads both x86_64 binaries as artifacts. Two static musl jobs (`ubuntu-latest` x86_64, `ubuntu-24.04-arm` aarch64) build their own target, fail on a dynamic interpreter (`PT_INTERP`) and run the e2e suite natively. A `windows-arm64` job (`windows-11-arm`) builds `aarch64-pc-windows-msvc`, asserts the PE machine type and version resource, and runs the suite natively. A `macos-arm64` job (`macos-14`) builds `aarch64-apple-darwin`, asserts the arch with `lipo`, ad-hoc signs the binary and runs the bash e2e suite. A `v*` tag push additionally runs the `release` job: it downloads all six artifacts, renames them to `foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-windows-arm64.exe`, `foton-handoff-linux-musl`, `foton-handoff-linux-arm64-musl` and `foton-handoff-macos-arm64`, writes `SHA256SUMS.txt`, and publishes a GitHub Release. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
-- Local build-and-test orchestrator added: `scripts/build-and-test-all.sh` runs fmt, clippy, unit tests, both builds (Linux native + Windows cross-compile), both e2e suites, and both speedtests in one command. Stops on first failure.
-- Speedtest scripts added: `scripts/speedtest-linux.sh` and `scripts/speedtest-windows.ps1` run 7 benchmark scenarios (startup, read with 10/1k/5k files, write with 10/1k files, write -n with 1k files) following the speedtest methodology rules (no cross-filesystem testing).
-- Current source-truth version: v0.1.7 (Cargo.toml) and CHANGELOG.
-- Agent prompt finalized (chained-memory wording, mandatory dry-run-first rule with stop-and-ask on error, session start/end triggers); embedded verbatim in README (top section) and in this doc. Pasting it into AGENTS.md is a user action.
+**Current state** (v0.1.7, 2026-10-29):
+- Package/bin `foton-handoff`, lib `foton_handoff_core`; subcommand `write` (renamed from `commit`).
+- Release profile `[profile.release]`: `lto = true`, `codegen-units = 1`, `opt-level = "s"`, `strip = true`. Published v0.1.7 assets range from 310,272 B to 475,760 B.
+- Strict `parse_args()` in `src/main.rs`: rejects unknown flags, enforces exactly one positional, validates non-empty project; 33 unit tests total (10 parse, 8 store, 15 parse_args).
+- Both e2e suites at 14 groups plus a trailing multi-word round trip; green on Linux glibc, Linux musl x86_64 and arm64, Windows x86_64 and arm64, and macOS arm64.
+- Root is the executable's directory via `current_exe()`, with `current_dir()` only as fallback if `current_exe()` fails. No env vars.
+- Public remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds six targets; local builds are optional. Build output lives under `foton-handoff-src/target/`; `release/` is a gitignored local drop point and currently holds only `release/v0.1.7/`. The project root never holds a binary.
+- `.github/workflows/build.yml` triggers on push to `main`, `v*` tags, pull requests to `main` and manual dispatch. fmt, Clippy and unit tests run on the linux, windows and macos-arm64 jobs; the two musl jobs and windows-arm64 build, run their link checks and run e2e. Six artifacts, one per target. A `v*` tag runs the `release` job: downloads all six artifacts, renames them to `foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-windows-arm64.exe`, `foton-handoff-linux-musl`, `foton-handoff-linux-arm64-musl` and `foton-handoff-macos-arm64`, writes `SHA256SUMS.txt`, and publishes a GitHub Release with generated notes. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
+- `scripts/build-and-test-all.sh` runs fmt, clippy, unit tests, three builds (Linux glibc native, Windows cross-compile, Linux musl), three e2e runs and two speedtests; stops on first failure. Requires WSL with PowerShell interop (`wslpath`, `powershell.exe`), not a generic bash host.
+- Speedtest scripts run 7 scenarios (startup, read with 10/1k/5k files, write with 10/1k files, write -n with 1k files) following the speedtest methodology (no cross-filesystem testing).
+- Current source-truth version: v0.1.7 (`Cargo.toml`, `Cargo.lock` and CHANGELOG agree; tag v0.1.7 published).
+- Agent prompt embedded verbatim in README and this doc. Pasting it into AGENTS.md is a user action.
 
 **Next session** : none planned. Pending user action: paste the agent prompt into AGENTS.md files with the real exe path substituted.
 
 ## completed steps
+
+Historical record, oldest first; entries describe the state at the time.
 
 ### 1-6. Completed (previous sessions)
 - Strict `parse_args()` extracted in `src/main.rs`; unknown flags rejected, positional count enforced, non-empty project validated; errors print message + usage, exit 2.

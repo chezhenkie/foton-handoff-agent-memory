@@ -5,7 +5,7 @@ Usage:
   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 [-Bin path\to\foton-handoff.exe]
 
 With no -Bin, these candidates are tried relative to this script's folder.
-Ship binaries live in release\, build output in the crate target folder, never in the project root:
+A local candidate can live in release\, build output stays in the crate target folder, never in the project root:
   ..\release\foton-handoff.exe
   ..\foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
   ..\target\x86_64-pc-windows-gnu\release\foton-handoff.exe

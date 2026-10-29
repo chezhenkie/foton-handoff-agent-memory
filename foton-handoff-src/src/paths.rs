@@ -2,7 +2,8 @@
 //!
 //! Root is the executable's own directory, resolved via `current_exe()`.
 //! The agent has zero control over storage location -- no environment
-//! variables, no CWD influence. `handoffarchive/` is a sibling of the exe.
+//! variables. `current_dir()` is used only if `current_exe()` fails.
+//! `handoffarchive/` is a sibling of the exe.
 
 use std::env;
 use std::path::PathBuf;

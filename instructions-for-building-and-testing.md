@@ -6,8 +6,9 @@ Rust implementation of the foton-handoff CLI.
 
 Shipped builds come from CI. `.github/workflows/build.yml` builds Linux glibc,
 static Linux musl (x86_64 and aarch64), Windows (x86_64 and arm64, native MSVC,
-`+crt-static`) and macOS arm64 (native Apple Silicon) on every push and pull
-request; a `v*` tag publishes the binaries as a GitHub Release. The tag name
+`+crt-static`) and macOS arm64 (native Apple Silicon) on every push to `main`,
+every `v*` tag and every pull request to `main`; a `v*` tag publishes the
+binaries as a GitHub Release. The tag name
 follows `Cargo.toml`, so keep `Cargo.toml`, `Cargo.lock` and `CHANGELOG.md` in
 step.
 
@@ -97,9 +98,10 @@ cargo test
 cargo build --release
 ```
 
-`scripts/build-and-test-all.sh` runs all of that plus both builds, both e2e
-suites and both speedtests in one pass from a bash host; the Windows steps call
-`powershell.exe`, so they only run where PowerShell is available.
+`scripts/build-and-test-all.sh` runs all of that plus three builds (Linux glibc
+native, Windows cross-compile, Linux musl), three e2e runs and two speedtests in
+one pass. It requires WSL with PowerShell interop (`wslpath`,
+`powershell.exe`); it does not run on a plain bash host.
 
 ## Linux e2e
 

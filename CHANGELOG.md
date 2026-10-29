@@ -20,7 +20,7 @@ All notable changes to foton-handoff. Dates are UTC.
 
 - Added a Windows ARM64 build: new `windows-arm64` CI job on the native `windows-11-arm` runner builds `aarch64-pc-windows-msvc` with `+crt-static`, asserts the PE machine type is `0xAA64`, checks the version resource, runs the 14-group e2e suite natively and uploads the artifact. The release job publishes it as `foton-handoff-windows-arm64.exe` and includes it in `SHA256SUMS.txt`.
 - Added a Windows version resource (`build.rs`, build dependency `tauri-winres`). The exe properties now carry `FileDescription`, `ProductName`, `CompanyName`, `LegalCopyright`, `OriginalFilename`, `InternalName`, `Comments`, and `FileVersion` / `ProductVersion` derived from `Cargo.toml`.
-- Both Windows jobs fail the build if the version resource fields or the version number are missing or wrong.
+- Both Windows jobs fail the build if any of the checked version resource fields (`ProductName`, `InternalName`, `OriginalFilename`, `FileDescription`, `LegalCopyright`, `FileVersion`) is missing or wrong.
 - README, build/test instructions and e2e guide updated for the fifth target and the version resource.
 - Version bumped to 0.1.5 in `Cargo.toml` and `Cargo.lock`.
 
@@ -67,7 +67,7 @@ CI validation release; shipped binaries are code-identical to v0.1.0.
 Initial release.
 
 - Rust CLI with chained-memory semantics: `write` archives the current handoff into `handoffarchive/` and replaces it; `read` prints the newest.
-- UTC-stamped filenames `{YYYY-MM-DD_HHMM}_{project}.md`; exact, case-insensitive matching; `-2`/`-3` suffixes on same-minute collisions.
+- UTC-stamped filenames `{YYYY-MM-DD_HHMM}_{project}.md`; case-insensitive matching on the normalized project name (trim, spaces and other unsafe characters to `_`, 40-character limit); `-2`/`-3` suffixes on same-minute collisions.
 - Storage root hardcoded to the directory containing the executable. No environment variables, no CWD influence.
 - Strict argument parsing; exit codes 0 (ok), 1 (runtime), 2 (usage).
 - Fully static Windows exe (MSVC, `+crt-static`) and fully static Linux binary (musl).

@@ -6,17 +6,17 @@ UTC-dated Markdown file and moves older handoffs for the same project into
 `handoffarchive/`. Nothing is deleted or overwritten in place.
 
 Why it exists: total isolation between the agent and its memory. The archive
-logic runs entirely inside the executable — moving, dating, and suffixing
-files is invisible to the agent,never touching archive files.
+logic runs entirely inside the executable - moving, dating, and suffixing
+files is invisible to the agent, never touching archive files.
 The argument surface given to the agent is minimal by design:
-one subcommand and one quoted project name, optional flag `-n`;
+one subcommand per call and one quoted project name, optional flag `-n`;
 
 Use it so an LLM never touches memory handoff files directly: it only calls `read`
 and `write` through this tool.
 
 ## Agent prompt
 
-Exact prompt given to the agent (same text as in `README.md` and intended for AGENTS.md):
+Exact prompt given to the agent (same text as in `foton-handoff-design-and-state.md` and intended for AGENTS.md):
 
 ```text
  
@@ -49,7 +49,11 @@ A handoff is identified solely by its filename:
 ```
 
 - Datetimes are UTC.
-- Matching is exact and case-insensitive.
+- Matching normalizes both sides: trim, replace every character other than a
+  letter, digit, `-`, `_` or space with `_`, turn spaces into `_`, keep the first
+  40 characters, compare case-insensitively. Distinct names can therefore alias:
+  `a/b` and `a?b` match the same project, as do two long names that share the
+  first 40 characters.
 - `read <project>` prints the newest matching handoff to stdout.
 - `write <project>` reads new handoff text from stdin, archives existing
   handoffs into `handoffarchive/`, then writes the new file.
@@ -76,26 +80,30 @@ foton-handoff write myproj < updated-handoff.md
 foton-handoff write myproj -n < updated-handoff.md
 ```
 
-`-n` / `--dry-run` is accepted by both subcommands. On `write` it prints the
-archive/write actions without touching the filesystem.
+`-n` / `--dry-run` is accepted by both subcommands. `read` parses it and ignores
+it. On `write` it prints the archive moves and
+`would write:   newest for project '<name>'` without naming the target file, and
+touches nothing.
 
 Exit codes:
 
-- `0` — success
-- `1` — runtime error: no matching handoff, empty stdin, or I/O failure
-- `2` — usage error: missing arguments, unknown subcommand, or empty project
+- `0` - success
+- `1` - runtime error: no matching handoff, empty stdin, or I/O failure
+- `2` - usage error: missing arguments, unknown subcommand, or empty project
   name
 
 ## Handoff root
 
 The handoff root is the directory containing the executable.
-`handoffarchive/` is created as a sibling of the executable. The agent has no
-control over the storage location: no environment variables, no CWD influence.
+`handoffarchive/` is created as a sibling of the executable. `current_dir()` is
+used only if `current_exe()` fails. The agent has no control over the storage
+location: no environment variables.
 
 ## Build
 
-CI builds six targets. Every push and pull request runs the check and test
-matrix in `.github/workflows/build.yml`:
+CI builds six targets. Every push to `main`, every `v*` tag and every pull
+request to `main` runs the check and test matrix in
+`.github/workflows/build.yml`:
 
 - `linux` - Ubuntu x86_64, glibc, dynamically linked. fmt, Clippy, unit tests,
   release build, e2e.
@@ -166,10 +174,13 @@ foton-handoff-proj/
 +-- .github/
 |   +-- workflows/
 |       +-- build.yml
++-- .gitattributes
 +-- .gitignore
 +-- agents.md                    (gitignored)
++-- CHANGELOG.md
 +-- README.md
 +-- foton-handoff-design-and-state.md
++-- foton-handoff-docs-audit.md
 +-- foton-handoff-e2e-scripts.md
 +-- foton-handoff-performance-benchmarks.md
 +-- instructions-for-building-and-testing.md
@@ -188,9 +199,7 @@ foton-handoff-proj/
 |   +-- build.rs
 |   +-- rust-toolchain.toml
 |   +-- .gitignore
-+-- release/                     (gitignored)
-|   +-- foton-handoff
-|   +-- foton-handoff.exe
++-- release/                     (gitignored; e.g. v0.1.7/ with the six assets)
 +-- scripts/
     +-- build-and-test-all.sh
     +-- e2e-linux.sh
@@ -207,9 +216,10 @@ binary.
 ## Testing
 
 `scripts/build-and-test-all.sh` runs the local suite in one pass: fmt, Clippy,
-unit tests, the glibc and musl builds, both e2e suites, both speedtests. It
-resolves the crate path from its own location and needs a bash host; the Windows
-steps call `powershell.exe`, so they only run where PowerShell is available.
+unit tests, three builds (Linux glibc native, Windows cross-compile, Linux musl),
+three e2e runs and two speedtests. It resolves the crate path from its own
+location and requires WSL with PowerShell interop (`wslpath`, `powershell.exe`);
+it does not run on a plain bash host.
 
 ```bash
 bash scripts/build-and-test-all.sh
@@ -228,11 +238,12 @@ bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
 
 The same e2e script runs unchanged on macOS against a native build.
 
-Windows e2e and speedtest take the path of the Windows binary:
+Windows e2e and speedtest take the path of the Windows binary; run these from
+the crate folder:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 -Bin <path-to-foton-handoff.exe>
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-windows.ps1 -Bin <path-to-foton-handoff.exe>
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin <path-to-foton-handoff.exe>
+powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\speedtest-windows.ps1 -Bin <path-to-foton-handoff.exe>
 ```
 
 Linux speedtest:
