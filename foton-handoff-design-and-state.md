@@ -142,7 +142,7 @@ foton-handoff-proj/
 - `.github/workflows/build.yml` runs fmt, Clippy, unit tests, release build and e2e on Linux and Windows for every push and pull request to `main`, and uploads both x86_64 binaries as artifacts. Two static musl jobs (`ubuntu-latest` x86_64, `ubuntu-24.04-arm` aarch64) build their own target, fail on a dynamic interpreter (`PT_INTERP`) and run the e2e suite natively. A `windows-arm64` job (`windows-11-arm`) builds `aarch64-pc-windows-msvc`, asserts the PE machine type and version resource, and runs the suite natively. A `v*` tag push additionally runs the `release` job: it downloads all five artifacts, renames them to `foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-windows-arm64.exe`, `foton-handoff-linux-musl` and `foton-handoff-linux-arm64-musl`, writes `SHA256SUMS.txt`, and publishes a GitHub Release. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
 - Local build-and-test orchestrator added: `scripts/build-and-test-all.sh` runs fmt, clippy, unit tests, both builds (Linux native + Windows cross-compile), both e2e suites, and both speedtests in one command. Stops on first failure.
 - Speedtest scripts added: `scripts/speedtest-linux.sh` and `scripts/speedtest-windows.ps1` run 7 benchmark scenarios (startup, read with 10/1k/5k files, write with 10/1k files, write -n with 1k files) following the speedtest methodology rules (no cross-filesystem testing).
-- Current source-truth version: v0.1.5 (Cargo.toml) and CHANGELOG.
+- Current source-truth version: v0.1.6 (Cargo.toml) and CHANGELOG.
 - Agent prompt finalized (chained-memory wording, mandatory dry-run-first rule with stop-and-ask on error, session start/end triggers); embedded verbatim in README (top section) and in this doc. Pasting it into AGENTS.md is a user action.
 
 **Next session** : none planned. Pending user action: paste the agent prompt into AGENTS.md files with the real exe path substituted.
@@ -206,3 +206,10 @@ foton-handoff-proj/
 - Resource compilation path is host-detected: MSVC targets use the Windows SDK or VS `rc.exe`, GNU targets use mingw-w64 `windres`; `RC` overrides. The x86_64 mingw cross-build was verified locally: `windres` produced the resource, and the exe reports the expected fields and version.
 - Both Windows CI jobs gained a `version resource check` step that reads the binary back through `System.Diagnostics.FileVersionInfo` and fails on a missing or wrong field, or a version mismatch against `Cargo.toml`.
 - Version bumped to 0.1.5 in `Cargo.toml` and `Cargo.lock`; README, build/test instructions, e2e guide and CHANGELOG updated.
+
+### 15. Completed (this session)
+- Temp sandbox prefix renamed to `foton-handoff`: `scripts/e2e-linux.sh`, `scripts/e2e-windows.ps1`, `scripts/speedtest-linux.sh`, `scripts/speedtest-windows.ps1` and the unit-test temp dir in `src/store.rs` now use `/tmp/foton-handoff` and `%TEMP%\foton-handoff`. No `opencode` string remains in the tree.
+- E2e guide and performance benchmark notes updated for the new sandbox path.
+- Linux verification green: fmt --check, clippy -D warnings, 33 unit tests, release build, 14 e2e groups.
+- Windows verification green: mingw-w64 cross-build with `+crt-static`, 14 e2e groups.
+- Version bumped to 0.1.6 in `Cargo.toml` and `Cargo.lock`; CHANGELOG and README version line updated.

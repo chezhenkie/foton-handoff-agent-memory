@@ -2,6 +2,12 @@
 
 All notable changes to foton-handoff. Dates are UTC.
 
+## v0.1.6 - 2026-10-29
+
+- Renamed the temp sandbox directory prefix used by the e2e and speedtest scripts and the unit-test temp dir to `foton-handoff` (`/tmp/foton-handoff`, `%TEMP%\foton-handoff`). No binary behavior change.
+- E2e guide and performance benchmark notes updated for the new sandbox path.
+- Version bumped to 0.1.6 in `Cargo.toml` and `Cargo.lock`.
+
 ## v0.1.5 - 2026-10-24
 
 - Added a Windows ARM64 build: new `windows-arm64` CI job on the native `windows-11-arm` runner builds `aarch64-pc-windows-msvc` with `+crt-static`, asserts the PE machine type is `0xAA64`, checks the version resource, runs the 14-group e2e suite natively and uploads the artifact. The release job publishes it as `foton-handoff-windows-arm64.exe` and includes it in `SHA256SUMS.txt`.

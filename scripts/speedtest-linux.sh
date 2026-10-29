@@ -16,7 +16,7 @@ if [ -z "$BIN" ]; then
   exit 1
 fi
 
-ROOT=/tmp/opencode/foton-speedtest-$$
+ROOT=/tmp/foton-handoff/foton-speedtest-$$
 rm -rf "$ROOT"
 mkdir -p "$ROOT"
 

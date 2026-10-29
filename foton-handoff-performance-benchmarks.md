@@ -40,4 +40,4 @@ Or run both via the orchestrator (which also runs fmt, clippy, unit tests, build
 bash scripts/build-and-test-all.sh
 ```
 
-The Linux speedtest copies the binary to `/tmp/` (native ext4); the Windows speedtest copies to `%TEMP%\opencode\` (NTFS). This follows the speedtest methodology rules: no cross-filesystem testing.
+The Linux speedtest copies the binary to `/tmp/` (native ext4); the Windows speedtest copies to `%TEMP%\foton-handoff\` (NTFS). This follows the speedtest methodology rules: no cross-filesystem testing.

@@ -33,7 +33,7 @@ $Bin = (Resolve-Path -LiteralPath $Bin).Path
 
 Write-Host "=== binary: $Bin ==="
 
-$sandbox = Join-Path $env:TEMP "opencode"
+$sandbox = Join-Path $env:TEMP "foton-handoff"
 New-Item -ItemType Directory -Force -Path $sandbox | Out-Null
 $stamp = "{0}-{1}" -f $PID, (Get-Date -Format "HHmmss")
 $root = Join-Path $sandbox ("foton-e2e-" + $stamp)

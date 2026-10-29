@@ -25,7 +25,7 @@ if [ -z "$BIN" ]; then
   exit 1
 fi
 
-ROOT=/tmp/opencode/foton-e2e-$$
+ROOT=/tmp/foton-handoff/foton-e2e-$$
 rm -rf "$ROOT"
 mkdir -p "$ROOT"
 

@@ -97,8 +97,8 @@ The tool resolves its storage root from the directory of its own executable.
 The scripts exploit this to keep tests hermetic:
 
 1. Create a unique temp root per run:
-   - Windows: `%TEMP%\opencode\foton-e2e-<PID>-<HHmmss>`
-   - Linux:   `/tmp/opencode/foton-e2e-<PID>`
+   - Windows: `%TEMP%\foton-handoff\foton-e2e-<PID>-<HHmmss>`
+   - Linux:   `/tmp/foton-handoff/foton-e2e-<PID>`
 2. Copy the target binary into that root.
 3. Run every test invocation against the copy.
 

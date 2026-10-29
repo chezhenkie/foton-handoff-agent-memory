@@ -109,7 +109,7 @@ mod tests {
             .lock()
             .unwrap_or_else(|e| e.into_inner());
         let n = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let dir = std::env::temp_dir().join("opencode").join(format!(
+        let dir = std::env::temp_dir().join("foton-handoff").join(format!(
             "store-test-{}-{}",
             std::process::id(),
             n

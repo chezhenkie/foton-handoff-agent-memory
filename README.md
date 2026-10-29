@@ -248,4 +248,4 @@ development convenience.
 
 Dependencies are locked (`chrono = "=0.4.45"`, `tauri-winres = "=0.3.7"` as a
 build dependency, pinned toolchain, checked-in `Cargo.lock`) for reproducible
-builds. Current source-truth version: v0.1.5.
+builds. Current source-truth version: v0.1.6.
