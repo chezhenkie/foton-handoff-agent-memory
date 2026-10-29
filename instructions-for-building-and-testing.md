@@ -5,10 +5,11 @@ Rust implementation of the foton-handoff CLI.
 ## Build
 
 Shipped builds come from CI. `.github/workflows/build.yml` builds Linux glibc,
-static Linux musl (x86_64 and aarch64) and Windows (x86_64 and arm64, native
-MSVC, `+crt-static`) on every push and pull request; a `v*` tag publishes the
-binaries as a GitHub Release. The tag name follows `Cargo.toml`, so keep
-`Cargo.toml`, `Cargo.lock` and `CHANGELOG.md` in step.
+static Linux musl (x86_64 and aarch64), Windows (x86_64 and arm64, native MSVC,
+`+crt-static`) and macOS arm64 (native Apple Silicon) on every push and pull
+request; a `v*` tag publishes the binaries as a GitHub Release. The tag name
+follows `Cargo.toml`, so keep `Cargo.toml`, `Cargo.lock` and `CHANGELOG.md` in
+step.
 
 Windows builds embed a version resource (`build.rs` via `tauri-winres`): product
 metadata in the file properties and `FileVersion` / `ProductVersion` derived from
@@ -44,6 +45,13 @@ dependencies.
 The ARM64 Windows binary is built by CI only, on the native `windows-11-arm`
 runner with `aarch64-pc-windows-msvc`.
 
+The macOS ARM64 binary is built by CI only, on the native `macos-14` runner with
+the host `aarch64-apple-darwin` target. `build.rs` skips the Windows resource on
+non-Windows targets, so no Cargo change is needed. The binary is ad-hoc signed
+after the build (`codesign --force --sign -`); it is not notarized, so a
+downloaded copy needs `xattr -d com.apple.quarantine` before Finder will launch
+it.
+
 ## Usage
 
 ```text
@@ -76,7 +84,9 @@ the matching e2e script. The two static musl jobs build their own target, fail
 if the ELF has a dynamic interpreter (`PT_INTERP`), and run the same e2e suite;
 the aarch64 job runs it on a native arm64 runner. The Windows arm64 job does the
 same on a native arm64 runner, additionally asserting the PE machine type and
-the version resource fields.
+the version resource fields. The macOS arm64 job builds on a native Apple
+Silicon runner, checks the arch with `lipo`, re-signs ad hoc, and runs the same
+bash e2e suite.
 
 The same checks run locally without CI:
 

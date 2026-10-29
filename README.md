@@ -94,7 +94,7 @@ control over the storage location: no environment variables, no CWD influence.
 
 ## Build
 
-CI builds five targets. Every push and pull request runs the check and test
+CI builds six targets. Every push and pull request runs the check and test
 matrix in `.github/workflows/build.yml`:
 
 - `linux` - Ubuntu x86_64, glibc, dynamically linked. fmt, Clippy, unit tests,
@@ -108,8 +108,10 @@ matrix in `.github/workflows/build.yml`:
 - `windows-arm64` - `aarch64-pc-windows-msvc` on a native arm64 runner with
   `+crt-static`. Build, PE machine check, version resource check, static CRT
   check, e2e.
+- `macos-arm64` - `aarch64-apple-darwin` on a native Apple Silicon runner.
+  fmt, Clippy, unit tests, release build, arch check, ad-hoc signature, e2e.
 
-A `v*` tag then publishes all five binaries as a GitHub Release. No local
+A `v*` tag then publishes all six binaries as a GitHub Release. No local
 toolchain is needed to produce a shipped build, and the build host is unrelated
 to the machine the binary runs on.
 
@@ -146,6 +148,12 @@ RUSTFLAGS="-C target-feature=+crt-static" \
 
 The ARM64 Windows binary is produced only by CI on the native arm64 runner; the
 MSVC resource and linker toolchain is not reproduced on a cross host.
+
+The macOS ARM64 binary is produced only by CI on the native Apple Silicon
+runner. It is ad-hoc signed (`codesign --force --sign -`) after the build, since
+macOS requires at least an ad-hoc signature on arm64; it is not notarized, so a
+downloaded copy needs the quarantine attribute removed before Finder will launch
+it: `xattr -d com.apple.quarantine foton-handoff-macos-arm64`.
 
 Build output stays under `foton-handoff-src/target/`. `release/` at the project
 root is an optional local drop point for built binaries and is gitignored; the
@@ -218,6 +226,8 @@ cargo build --release
 bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
 ```
 
+The same e2e script runs unchanged on macOS against a native build.
+
 Windows e2e and speedtest take the path of the Windows binary:
 
 ```powershell
@@ -238,14 +248,15 @@ GitHub Actions workflow `.github/workflows/build.yml` on the public repository
 fmt, Clippy `-D warnings`, unit tests, release build, e2e suite, and a static
 CRT check on Windows; the two musl jobs run their own release build, interpreter
 check and e2e suite; the Windows arm64 job builds the MSVC ARM64 target on a
-native arm64 runner and checks the PE machine type. All five binaries are
-uploaded as artifacts. A push of a `v*` tag runs the same jobs and then
-publishes a GitHub Release with `foton-handoff-linux`,
+native arm64 runner and checks the PE machine type; the macOS arm64 job builds
+on a native Apple Silicon runner, checks the arch and re-signs ad hoc. All six
+binaries are uploaded as artifacts. A push of a `v*` tag runs the same jobs and
+then publishes a GitHub Release with `foton-handoff-linux`,
 `foton-handoff-windows.exe`, `foton-handoff-windows-arm64.exe`,
-`foton-handoff-linux-musl`, `foton-handoff-linux-arm64-musl` and
-`SHA256SUMS.txt`. CI is the only source of shipped binaries; local runs are a
-development convenience.
+`foton-handoff-linux-musl`, `foton-handoff-linux-arm64-musl`,
+`foton-handoff-macos-arm64` and `SHA256SUMS.txt`. CI is the only source of
+shipped binaries; local runs are a development convenience.
 
 Dependencies are locked (`chrono = "=0.4.45"`, `tauri-winres = "=0.3.7"` as a
 build dependency, pinned toolchain, checked-in `Cargo.lock`) for reproducible
-builds. Current source-truth version: v0.1.6.
+builds. Current source-truth version: v0.1.7.

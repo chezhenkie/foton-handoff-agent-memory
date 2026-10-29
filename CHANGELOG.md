@@ -2,6 +2,14 @@
 
 All notable changes to foton-handoff. Dates are UTC.
 
+## v0.1.7 - 2026-10-29
+
+- Added a macOS ARM64 build: new `macos-arm64` CI job on the native Apple Silicon `macos-14` runner builds `aarch64-apple-darwin`, asserts the arch with `lipo`, ad-hoc signs the binary with `codesign --force --sign -` (macOS requires at least an ad-hoc signature on arm64), verifies the signature, runs the 14-group e2e suite unchanged through `scripts/e2e-linux.sh` and uploads the artifact. The release job publishes it as `foton-handoff-macos-arm64` and includes it in `SHA256SUMS.txt`; six assets now.
+- `build.rs` already skips the Windows resource for non-Windows targets, and `tauri-winres` compiles on macOS as a plain build dependency, so no Cargo change was needed. No Rust source change; the macOS build uses the same code path.
+- The binary is not notarized: a downloaded copy needs `xattr -d com.apple.quarantine` before Finder will launch it.
+- README, build/test instructions, e2e guide and design notes updated for the sixth target.
+- Version bumped to 0.1.7 in `Cargo.toml` and `Cargo.lock`.
+
 ## v0.1.6 - 2026-10-29
 
 - Renamed the temp sandbox directory prefix used by the e2e and speedtest scripts and the unit-test temp dir to `foton-handoff` (`/tmp/foton-handoff`, `%TEMP%\foton-handoff`). No binary behavior change.
