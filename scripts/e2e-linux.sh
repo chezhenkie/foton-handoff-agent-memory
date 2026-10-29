@@ -1,5 +1,5 @@
 #!/bin/bash
-# Linux e2e smoke test for foton-handoff. Mirrors scripts/e2e-windows.ps1.
+# Bash e2e smoke test for foton-handoff (Linux and macOS). Mirrors scripts/e2e-windows.ps1.
 #
 # Usage:
 #   bash scripts/e2e-linux.sh [path/to/foton-handoff]
@@ -154,4 +154,4 @@ test "$codeD" -eq 0
 test "$codeE" -eq 0
 test "$OUT" = "# Multi Word Handoff"
 
-echo "=== ALL LINUX E2E TESTS PASSED ==="
+echo "=== ALL E2E TESTS PASSED ==="
