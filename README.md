@@ -3,7 +3,8 @@
 
 A small CLI for managing project handoff files. Each `write` creates a new
 UTC-dated Markdown file and moves older handoffs for the same project into
-`handoffarchive/`. Nothing is deleted or overwritten in place.
+`handoffarchive/`. Nothing is deleted or overwritten in place, except when two
+writes for one project land in the same minute (see Concurrent use).
 
 Why it exists: total isolation between the agent and its memory. The archive
 logic runs entirely inside the executable - moving, dating, and suffixing
@@ -58,12 +59,32 @@ A handoff is identified solely by its filename:
 - `write <project>` reads new handoff text from stdin, archives existing
   handoffs into `handoffarchive/`, then writes the new file.
 - Same-minute name collisions get `-2`, `-3`, ... suffixes in both root and
-  archive.
+  archive. A suffixed file is not matched by later calls for that project.
 - Success is silent; errors go to stderr with a non-zero exit code.
 - `read` on a project with no memory exits 1 and tells the agent on stderr that
   no memory exists yet, to proceed with a dry-run write first, and to have the
   user manually check the handoff folder. This is normal on first use.
 - Always quote the project name (`"proj_name"`), including multi-word names.
+
+## Concurrent use
+
+The tool takes no lock, so two instances running at once are not coordinated.
+Every instance of the binary shares one store: the folder next to the executable
+and its `handoffarchive/`.
+
+- Writes to different projects are independent as long as the names stay
+  distinct after the normalization above. Their archive sets are disjoint, so
+  neither process touches the other's files.
+- Two writes to the same project at the same time can lose a handoff. Either the
+  second prune fails with a non-zero exit code, or both choose the same
+  minute-stamped filename and the later write replaces the earlier text.
+- A read that lands between another process's prune and its write exits 1 with
+  "no handoff found", although a handoff is about to be written.
+- A same-minute collision produces a `-2` file that later `read` and `write`
+  calls never match, because matching compares the full project name. That file
+  is not archived either. Do not write the same project twice within a minute.
+- On Windows a running instance holds `foton-handoff.exe` open, so a rebuild
+  fails until it exits.
 
 ## Usage
 
