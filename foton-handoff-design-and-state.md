@@ -231,3 +231,7 @@ Historical record, oldest first; entries describe the state at the time.
 - Release job downloads the sixth artifact, renames it to `foton-handoff-macos-arm64`, chmods it, adds it to `SHA256SUMS.txt` and to the `gh release create` list.
 - No Rust source change; the macOS binary runs the same code path as the other Unix targets.
 - Version bumped to 0.1.7 in `Cargo.toml` and `Cargo.lock`; README, build/test instructions, e2e guide and CHANGELOG updated.
+
+### 17. Completed (this session)
+- The `macos-arm64` job moved from `runs-on: macos-14` to `runs-on: macos-15`. GitHub stopped offering the `macos-14` configuration and failed the job in 1 s with "The configuration 'macos-14-arm64-us-default' is not supported", then skipped the release job.
+- No source, dependency or artifact change; the macOS build still targets the host `aarch64-apple-darwin`. Build/test instructions and CHANGELOG updated.

@@ -46,7 +46,7 @@ dependencies.
 The ARM64 Windows binary is built by CI only, on the native `windows-11-arm`
 runner with `aarch64-pc-windows-msvc`.
 
-The macOS ARM64 binary is built by CI only, on the native `macos-14` runner with
+The macOS ARM64 binary is built by CI only, on the native arm64 `macos-15` runner with
 the host `aarch64-apple-darwin` target. `build.rs` skips the Windows resource on
 non-Windows targets, so no Cargo change is needed. The binary is ad-hoc signed
 after the build (`codesign --force --sign -`); it is not notarized, so a

@@ -2,6 +2,10 @@
 
 All notable changes to foton-handoff. Dates are UTC.
 
+## Unreleased
+
+- CI: the `macos-arm64` job moved from the retired `macos-14` label to `macos-15`, a native arm64 runner. GitHub Actions no longer offers the old configuration and failed the job at startup. No source or binary change.
+
 ## v0.1.7 - 2026-10-29
 
 - Added a macOS ARM64 build: new `macos-arm64` CI job on the native Apple Silicon `macos-14` runner builds `aarch64-apple-darwin`, asserts the arch with `lipo`, ad-hoc signs the binary with `codesign --force --sign -` (macOS requires at least an ad-hoc signature on arm64), verifies the signature, runs the 14-group e2e suite unchanged through `scripts/e2e-linux.sh` and uploads the artifact. The release job publishes it as `foton-handoff-macos-arm64` and includes it in `SHA256SUMS.txt`; six assets now.
