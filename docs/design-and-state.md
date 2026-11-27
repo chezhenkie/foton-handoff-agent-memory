@@ -79,6 +79,8 @@ Mandatory:
 
 ```
 foton-handoff-proj/
++-- .cargo/
+|   +-- config.toml
 +-- .github/
 |   +-- workflows/
 |       +-- build.yml
@@ -87,34 +89,36 @@ foton-handoff-proj/
 +-- agents.md                    (gitignored)
 +-- CHANGELOG.md
 +-- README.md
-+-- foton-handoff-design-and-state.md
-+-- foton-handoff-docs-audit.md
-+-- foton-handoff-e2e-scripts.md
-+-- foton-handoff-performance-benchmarks.md
-+-- instructions-for-building-and-testing.md
-+-- foton-handoff-src/
-|   +-- .cargo/
-|   |   +-- config.toml
-|   +-- src/
-|   |   +-- commands.rs
-|   |   +-- lib.rs
-|   |   +-- main.rs
-|   |   +-- parse.rs
-|   |   +-- paths.rs
-|   |   +-- store.rs
-|   +-- Cargo.toml
-|   +-- Cargo.lock
-|   +-- build.rs
-|   +-- rust-toolchain.toml
-|   +-- .gitignore
-|   +-- target/                  (build artifacts, gitignored)
-+-- release/                     (gitignored; e.g. v0.1.7/ with the six assets)
-+-- scripts/
-    +-- build-and-test-all.sh
-    +-- e2e-linux.sh
-    +-- e2e-windows.ps1
-    +-- speedtest-linux.sh
-    +-- speedtest-windows.ps1
++-- requirements.md
++-- docs/
+|   +-- build-and-test.md
+|   +-- design-and-state.md
+|   +-- docs-audit.md
+|   +-- e2e-scripts.md
+|   +-- performance-benchmarks.md
++-- releases/                    (gitignored; e.g. v0.1.7/ with the six assets)
++-- resources/
+|   +-- standard streams.png
++-- rust-src/
+    +-- src/
+    |   +-- commands.rs
+    |   +-- lib.rs
+    |   +-- main.rs
+    |   +-- parse.rs
+    |   +-- paths.rs
+    |   +-- store.rs
+    +-- tools/
+    |   +-- build-and-test-all.sh
+    |   +-- e2e-linux.sh
+    |   +-- e2e-windows.ps1
+    |   +-- speedtest-linux.sh
+    |   +-- speedtest-windows.ps1
+    +-- Cargo.toml
+    +-- Cargo.lock
+    +-- build.rs
+    +-- rust-toolchain.toml
+    +-- .gitignore
+    +-- target/                  (build artifacts, gitignored)
 ```
 
 
@@ -141,18 +145,19 @@ Historical record; entries describe the state at the time of writing.
   (static CRT, mingw-w64 cross-build); size-reduction profile options were evaluated.
 - Repository hygiene change: the project-root `foton-handoff.exe` was deleted and is no longer produced. Build output stays in the crate `target/` folder (Windows `target/x86_64-pc-windows-gnu/release/`, Linux `target/release/`). A built binary may be dropped into the gitignored `release/` folder; the project root itself never holds one. Script default paths, README and the e2e scripts guide were updated to match.
 
-**Current state** (v0.1.7, 2026-10-29):
+**Current state** (v0.1.7, 2026-11-27):
 - Package/bin `foton-handoff`, lib `foton_handoff_core`; subcommand `write` (renamed from `commit`).
 - Release profile `[profile.release]`: `lto = true`, `codegen-units = 1`, `opt-level = "s"`, `strip = true`. Published v0.1.7 assets range from 310,272 B to 475,760 B.
-- Strict `parse_args()` in `src/main.rs`: rejects unknown flags, enforces exactly one positional, validates non-empty project; 33 unit tests total (10 parse, 8 store, 15 parse_args).
+- Strict `parse_args()` in `rust-src/src/main.rs`: rejects unknown flags, enforces exactly one positional, validates non-empty project; 33 unit tests total (10 parse, 8 store, 15 parse_args).
 - Both e2e suites at 14 groups plus a trailing multi-word round trip; green on Linux glibc, Linux musl x86_64 and arm64, Windows x86_64 and arm64, and macOS arm64.
 - Root is the executable's directory via `current_exe()`, with `current_dir()` only as fallback if `current_exe()` fails. No env vars.
-- Public remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds six targets; local builds are optional. Build output lives under `foton-handoff-src/target/`; `release/` is a gitignored local drop point and currently holds only `release/v0.1.7/`. The project root never holds a binary.
+- Public remote `chezhenkie/foton-handoff-agent-memory` (branch `main`). CI builds six targets; local builds are optional. Build output lives under `rust-src/target/`; `releases/` is a gitignored local drop point and currently holds only `releases/v0.1.7/`. The project root never holds a binary.
 - `.github/workflows/build.yml` triggers on push to `main`, `v*` tags, pull requests to `main` and manual dispatch. fmt, Clippy and unit tests run on the linux, windows and macos-arm64 jobs; the two musl jobs and windows-arm64 build, run their link checks and run e2e. Six artifacts, one per target. A `v*` tag runs the `release` job: downloads all six artifacts, renames them to `foton-handoff-linux`, `foton-handoff-windows.exe`, `foton-handoff-windows-arm64.exe`, `foton-handoff-linux-musl`, `foton-handoff-linux-arm64-musl` and `foton-handoff-macos-arm64`, writes `SHA256SUMS.txt`, and publishes a GitHub Release with generated notes. The job sets `permissions: contents: write` and passes `--repo` because it has no checkout.
-- `scripts/build-and-test-all.sh` runs fmt, clippy, unit tests, three builds (Linux glibc native, Windows cross-compile, Linux musl), three e2e runs and two speedtests; stops on first failure. Requires WSL with PowerShell interop (`wslpath`, `powershell.exe`), not a generic bash host.
+- `rust-src/tools/build-and-test-all.sh` runs fmt, clippy, unit tests, three builds (Linux glibc native, Windows cross-compile, Linux musl), three e2e runs and two speedtests; stops on first failure. Requires WSL with PowerShell interop (`wslpath`, `powershell.exe`), not a generic bash host.
 - Speedtest scripts run 7 scenarios (startup, read with 10/1k/5k files, write with 10/1k files, write -n with 1k files) following the speedtest methodology (no cross-filesystem testing).
-- Current source-truth version: v0.1.7 (`Cargo.toml`, `Cargo.lock` and CHANGELOG agree; tag v0.1.7 published).
+- Current source-truth version: v0.1.7 (`rust-src/Cargo.toml`, `rust-src/Cargo.lock` and CHANGELOG agree; tag v0.1.7 published).
 - Agent prompt embedded verbatim in README and this doc. Pasting it into AGENTS.md is a user action.
+- Layout: source in `rust-src/`, test tools in `rust-src/tools/`, docs in `docs/`, local binaries in `releases/`, images in `resources/`, cargo config at the root. Historical entries in this document keep the paths from the time they were written.
 
 **Next session** : none planned. Pending user action: paste the agent prompt into AGENTS.md files with the real exe path substituted.
 
@@ -235,3 +240,8 @@ Historical record, oldest first; entries describe the state at the time.
 ### 17. Completed (this session)
 - The `macos-arm64` job moved from `runs-on: macos-14` to `runs-on: macos-15`. GitHub stopped offering the `macos-14` configuration and failed the job in 1 s with "The configuration 'macos-14-arm64-us-default' is not supported", then skipped the release job.
 - No source, dependency or artifact change; the macOS build still targets the host `aarch64-apple-darwin`. Build/test instructions and CHANGELOG updated.
+
+### 18. Completed (this session)
+- Repository reorganised to the reference layout: `rust-src/` with `tools/`, `docs/`, `releases/`, `resources/` and a root `.cargo/config.toml`.
+- README, requirements, CI workflow, tool binary discovery and the live docs repointed; CHANGELOG and the audit note record the move.
+- Link scan: all Markdown targets resolve; every Markdown file is LF, ASCII and has balanced code fences. Linux release build and 14-group e2e pass; Windows GNU cross-build and 14-group e2e pass. Build output removed after validation. Changes staged, not committed.

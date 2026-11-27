@@ -17,7 +17,7 @@ and `write` through this tool.
 
 ## Agent prompt
 
-Exact prompt given to the agent (same text as in `foton-handoff-design-and-state.md` and intended for AGENTS.md):
+Exact prompt given to the agent (same text as in `docs/design-and-state.md` and intended for AGENTS.md):
 
 ```text
  
@@ -150,10 +150,10 @@ Windows binaries carry a version resource: `build.rs` embeds `FileDescription`,
 from `Cargo.toml`.
 
 A local build is optional and needs only the toolchain pinned in
-`foton-handoff-src/rust-toolchain.toml`:
+`rust-src/rust-toolchain.toml`:
 
 ```bash
-cd foton-handoff-src
+cd rust-src
 cargo build --release
 ```
 
@@ -167,7 +167,7 @@ cargo build --release --target x86_64-unknown-linux-musl
 
 Cross-building the Windows .exe from a non-Windows host needs the
 `x86_64-pc-windows-gnu` target, a mingw-w64 linker named in
-`foton-handoff-src/.cargo/config.toml`, a mingw-w64 `windres`, and a static C
+`.cargo/config.toml`, a mingw-w64 `windres`, and a static C
 runtime:
 
 ```bash
@@ -184,7 +184,7 @@ macOS requires at least an ad-hoc signature on arm64; it is not notarized, so a
 downloaded copy needs the quarantine attribute removed before Finder will launch
 it: `xattr -d com.apple.quarantine foton-handoff-macos-arm64`.
 
-Build output stays under `foton-handoff-src/target/`. `release/` at the project
+Build output stays under `rust-src/target/`. `releases/` at the project
 root is an optional local drop point for built binaries and is gitignored; the
 project root itself never holds a binary.
 
@@ -192,6 +192,8 @@ project root itself never holds a binary.
 
 ```text
 foton-handoff-proj/
++-- .cargo/
+|   +-- config.toml
 +-- .github/
 |   +-- workflows/
 |       +-- build.yml
@@ -200,77 +202,79 @@ foton-handoff-proj/
 +-- agents.md                    (gitignored)
 +-- CHANGELOG.md
 +-- README.md
-+-- foton-handoff-design-and-state.md
-+-- foton-handoff-docs-audit.md
-+-- foton-handoff-e2e-scripts.md
-+-- foton-handoff-performance-benchmarks.md
-+-- instructions-for-building-and-testing.md
-+-- foton-handoff-src/
-|   +-- .cargo/
-|   |   +-- config.toml
-|   +-- src/
-|   |   +-- commands.rs
-|   |   +-- lib.rs
-|   |   +-- main.rs
-|   |   +-- parse.rs
-|   |   +-- paths.rs
-|   |   +-- store.rs
-|   +-- Cargo.toml
-|   +-- Cargo.lock
-|   +-- build.rs
-|   +-- rust-toolchain.toml
-|   +-- .gitignore
-+-- release/                     (gitignored; e.g. v0.1.7/ with the six assets)
-+-- scripts/
-    +-- build-and-test-all.sh
-    +-- e2e-linux.sh
-    +-- e2e-windows.ps1
-    +-- speedtest-linux.sh
-    +-- speedtest-windows.ps1
++-- requirements.md
++-- docs/
+|   +-- build-and-test.md
+|   +-- design-and-state.md
+|   +-- docs-audit.md
+|   +-- e2e-scripts.md
+|   +-- performance-benchmarks.md
++-- releases/                    (gitignored; e.g. v0.1.7/ with the six assets)
++-- resources/
+|   +-- standard streams.png
++-- rust-src/
+    +-- src/
+    |   +-- commands.rs
+    |   +-- lib.rs
+    |   +-- main.rs
+    |   +-- parse.rs
+    |   +-- paths.rs
+    |   +-- store.rs
+    +-- tools/
+    |   +-- build-and-test-all.sh
+    |   +-- e2e-linux.sh
+    |   +-- e2e-windows.ps1
+    |   +-- speedtest-linux.sh
+    |   +-- speedtest-windows.ps1
+    +-- Cargo.toml
+    +-- Cargo.lock
+    +-- build.rs
+    +-- rust-toolchain.toml
+    +-- .gitignore
 ```
 
 Binaries are not tracked by git. CI builds and publishes them as Releases; a
-local build can be dropped into `release/` for convenience. Build output stays
-under `foton-handoff-src/target/`, and the project root itself never holds a
+local build can be dropped into `releases/` for convenience. Build output stays
+under `rust-src/target/`, and the project root itself never holds a
 binary.
 
 ## Testing
 
-`scripts/build-and-test-all.sh` runs the local suite in one pass: fmt, Clippy,
-unit tests, three builds (Linux glibc native, Windows cross-compile, Linux musl),
-three e2e runs and two speedtests. It resolves the crate path from its own
-location and requires WSL with PowerShell interop (`wslpath`, `powershell.exe`);
-it does not run on a plain bash host.
+`rust-src/tools/build-and-test-all.sh` runs the local suite in one pass: fmt,
+Clippy, unit tests, three builds (Linux glibc native, Windows cross-compile,
+Linux musl), three e2e runs and two speedtests. It resolves the crate path from
+its own location and requires WSL with PowerShell interop (`wslpath`,
+`powershell.exe`); it does not run on a plain bash host.
 
 ```bash
-bash scripts/build-and-test-all.sh
+bash rust-src/tools/build-and-test-all.sh
 ```
 
 Individual steps:
 
 ```bash
-cd foton-handoff-src
+cd rust-src
 cargo fmt --check
 cargo clippy --all-targets -- -D warnings
 cargo test
 cargo build --release
-bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
+bash tools/e2e-linux.sh ./target/release/foton-handoff
 ```
 
 The same e2e script runs unchanged on macOS against a native build.
 
 Windows e2e and speedtest take the path of the Windows binary; run these from
-the crate folder:
+the project root:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin <path-to-foton-handoff.exe>
-powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\speedtest-windows.ps1 -Bin <path-to-foton-handoff.exe>
+powershell -NoProfile -ExecutionPolicy Bypass -File rust-src\tools\e2e-windows.ps1 -Bin <path-to-foton-handoff.exe>
+powershell -NoProfile -ExecutionPolicy Bypass -File rust-src\tools\speedtest-windows.ps1 -Bin <path-to-foton-handoff.exe>
 ```
 
 Linux speedtest:
 
 ```bash
-bash scripts/speedtest-linux.sh <path-to-foton-handoff>
+bash rust-src/tools/speedtest-linux.sh <path-to-foton-handoff>
 ```
 
 ## CI

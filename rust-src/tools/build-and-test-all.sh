@@ -2,8 +2,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJ_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-CRATE_DIR="$PROJ_ROOT/foton-handoff-src"
+PROJ_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+CRATE_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo "=== foton-handoff local build and test ==="
 echo "Project root: $PROJ_ROOT"

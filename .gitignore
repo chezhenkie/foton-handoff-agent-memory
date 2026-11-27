@@ -2,7 +2,7 @@ agents.md
 AGENTS.md
 *.exe
 target/
-release/
+releases/
 handoff-tmp.txt
-Standard streams stdinn stdout stderr - Wikipedia.png
+resources/standard streams.png
 _ _ _ regels voor text powershell en tmp folders in windows.txt

@@ -1,9 +1,9 @@
 # foton-handoff e2e test scripts
 
-This document describes the two end-to-end (e2e) test scripts in `scripts/`:
+This document describes the two end-to-end (e2e) test scripts in `rust-src/tools/`:
 
-- `scripts/e2e-windows.ps1` -- Windows PowerShell 5.1 suite
-- `scripts/e2e-linux.sh`     -- Linux bash suite, also used unchanged on macOS
+- `rust-src/tools/e2e-windows.ps1` -- Windows PowerShell 5.1 suite
+- `rust-src/tools/e2e-linux.sh`     -- Linux bash suite, also used unchanged on macOS
 
 Both suites test a compiled `foton-handoff` binary as a black box. They make no
 assumptions about how the binary was built and exercise only its command line,
@@ -41,31 +41,29 @@ behavior difference between platforms shows up as a failure on exactly one side.
 ### Windows
 
 ```
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 [-Bin path\to\foton-handoff.exe]
+powershell -NoProfile -ExecutionPolicy Bypass -File rust-src\tools\e2e-windows.ps1 [-Bin path\to\foton-handoff.exe]
 ```
 
 If `-Bin` is omitted, the script tries these candidates relative to the
 script's own folder (`$PSScriptRoot`), in order, and uses the first that exists.
-A local candidate can be dropped in the gitignored `release\` folder; build
+A local candidate can be dropped in the gitignored `releases\` folder; build
 output stays in the crate target folder, never in the project root:
 
 ```
-..\release\foton-handoff.exe
-..\foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
+..\..\releases\foton-handoff.exe
 ..\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
 ```
 
 ### Linux
 
 ```
-bash scripts/e2e-linux.sh [path/to/foton-handoff]
+bash rust-src/tools/e2e-linux.sh [path/to/foton-handoff]
 ```
 
 If the argument is omitted, candidates tried relative to the script folder are:
 
 ```
-../release/foton-handoff
-../foton-handoff-src/target/release/foton-handoff
+../../releases/foton-handoff
 ../target/release/foton-handoff
 ```
 
@@ -78,15 +76,15 @@ the default candidates exist.
 build jobs on the public remote, always passing the freshly built binary
 explicitly:
 
-- Linux job:        `bash ../scripts/e2e-linux.sh ./target/release/foton-handoff`
-- Linux musl job:   `bash ../scripts/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-handoff`
-- Linux arm64 musl: `bash ../scripts/e2e-linux.sh ./target/aarch64-unknown-linux-musl/release/foton-handoff`
-- Windows job:      `../scripts/e2e-windows.ps1 -Bin ./target/release/foton-handoff.exe`
-- Windows arm64 job: `../scripts/e2e-windows.ps1 -Bin ./target/aarch64-pc-windows-msvc/release/foton-handoff.exe`
-- macOS arm64 job:  `bash ../scripts/e2e-linux.sh ./target/release/foton-handoff`
+- Linux job:        `bash tools/e2e-linux.sh ./target/release/foton-handoff`
+- Linux musl job:   `bash tools/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-handoff`
+- Linux arm64 musl: `bash tools/e2e-linux.sh ./target/aarch64-unknown-linux-musl/release/foton-handoff`
+- Windows job:      `tools/e2e-windows.ps1 -Bin ./target/release/foton-handoff.exe`
+- Windows arm64 job: `tools/e2e-windows.ps1 -Bin ./target/aarch64-pc-windows-msvc/release/foton-handoff.exe`
+- macOS arm64 job:  `bash tools/e2e-linux.sh ./target/release/foton-handoff`
 
 A failing suite step fails the whole job. The same checks also run locally via
-`scripts/build-and-test-all.sh`, which runs fmt, clippy, unit tests, three
+`rust-src/tools/build-and-test-all.sh`, which runs fmt, clippy, unit tests, three
 builds (Linux glibc native, Windows cross-compile, Linux musl), three e2e runs
 and two speedtests in one command (stops on first failure). It requires WSL with
 PowerShell interop (`wslpath`, `powershell.exe`), not a generic bash host.
@@ -192,8 +190,8 @@ When extending the suites:
 5. Re-run both suites locally before tagging, and let CI confirm:
 
    ```
-   powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 -Bin <exe>
-   bash scripts/e2e-linux.sh <binary>
+   powershell -NoProfile -ExecutionPolicy Bypass -File rust-src\tools\e2e-windows.ps1 -Bin <exe>
+   bash rust-src/tools/e2e-linux.sh <binary>
    ```
 
 Success banner: `=== ALL WINDOWS E2E TESTS PASSED ===` /

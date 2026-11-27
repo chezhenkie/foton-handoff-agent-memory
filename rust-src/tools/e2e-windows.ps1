@@ -1,13 +1,12 @@
 ﻿<#
-Windows e2e smoke test for foton-handoff. Mirrors scripts/e2e-linux.sh.
+Windows e2e smoke test for foton-handoff. Mirrors tools/e2e-linux.sh.
 
 Usage:
-  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\e2e-windows.ps1 [-Bin path\to\foton-handoff.exe]
+  powershell -NoProfile -ExecutionPolicy Bypass -File rust-src\tools\e2e-windows.ps1 [-Bin path\to\foton-handoff.exe]
 
 With no -Bin, these candidates are tried relative to this script's folder.
-A local candidate can live in release\, build output stays in the crate target folder, never in the project root:
-  ..\release\foton-handoff.exe
-  ..\foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
+A local candidate can live in releases\, build output stays in the crate target folder, never in the project root:
+  ..\..\releases\foton-handoff.exe
   ..\target\x86_64-pc-windows-gnu\release\foton-handoff.exe
 #>
 param(
@@ -18,8 +17,7 @@ $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrEmpty($Bin)) {
     $candidates = @(
-        (Join-Path $PSScriptRoot "..\release\foton-handoff.exe"),
-        (Join-Path $PSScriptRoot "..\foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe"),
+        (Join-Path $PSScriptRoot "..\..\releases\foton-handoff.exe"),
         (Join-Path $PSScriptRoot "..\target\x86_64-pc-windows-gnu\release\foton-handoff.exe")
     )
     $found = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1

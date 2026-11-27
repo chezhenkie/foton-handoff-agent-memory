@@ -4,6 +4,7 @@ All notable changes to foton-handoff. Dates are UTC.
 
 ## Unreleased
 
+- Repository layout reorganised: source and test tools in `rust-src/` (`tools/` holds the shell and PowerShell suites), documentation in `docs/`, local binaries in `releases/`, images in `resources/`, and the Cargo config at the root. CI, scripts and the live docs use the new paths; no code or binary change.
 - CI: the `macos-arm64` job moved from the retired `macos-14` label to `macos-15`, a native arm64 runner. GitHub Actions no longer offers the old configuration and failed the job at startup. No source or binary change.
 
 ## v0.1.7 - 2026-10-29

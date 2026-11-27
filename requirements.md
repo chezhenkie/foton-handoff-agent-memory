@@ -2,7 +2,7 @@
 
 The conditions a host, build and test environment must meet. Usage is in
 [README.md](README.md); build and test steps are in
-[instructions-for-building-and-testing.md](instructions-for-building-and-testing.md).
+[docs/build-and-test.md](docs/build-and-test.md).
 
 ## Runtime host
 
@@ -24,7 +24,7 @@ The conditions a host, build and test environment must meet. Usage is in
 ## Build toolchain
 
 - Rust 1.98.0 with rustfmt and clippy, as pinned in
-  `foton-handoff-src/rust-toolchain.toml` with the minimal profile.
+  `rust-src/rust-toolchain.toml` with the minimal profile.
 - Network access to crates.io on the first build. The only runtime dependency
   is `chrono =0.4.45`; the only build dependency is `tauri-winres =0.3.7`.
 - A native linker for the host target. The glibc build uses the system
@@ -32,7 +32,7 @@ The conditions a host, build and test environment must meet. Usage is in
   x86_64-unknown-linux-musl` or `aarch64-unknown-linux-musl`, because the musl
   target is self-contained.
 - For the Windows GNU cross-build, `x86_64-w64-mingw32-gcc` as named in
-  `foton-handoff-src/.cargo/config.toml` and a matching `windres`, both on
+  `.cargo/config.toml` and a matching `windres`, both on
   `PATH`, and `RUSTFLAGS="-C target-feature=+crt-static"`. The `RC` variable
   overrides the resource compiler. The resulting binary must have no external
   DLL dependencies.
@@ -46,11 +46,11 @@ The conditions a host, build and test environment must meet. Usage is in
 - `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and
   `cargo test` offline after the first build; the suite needs no network, no
   credentials and no fixtures outside the crate.
-- Bash for `scripts/e2e-linux.sh`, and PowerShell for
-  `scripts/e2e-windows.ps1`; both run against a built binary and are invoked
-  from `foton-handoff-src/`.
+- Bash for `rust-src/tools/e2e-linux.sh`, and PowerShell for
+  `rust-src/tools/e2e-windows.ps1`; both run against a built binary and are
+  invoked from `rust-src/`.
 - WSL with PowerShell interop (`wslpath`, `powershell.exe`) for
-  `scripts/build-and-test-all.sh`, which runs the format, lint and test pass,
+  `rust-src/tools/build-and-test-all.sh`, which runs the format, lint and test pass,
   three builds, three e2e runs and two speedtests in one pass. It does not run
   on a plain bash host.
 - CI runners: `ubuntu-latest` and `windows-latest` for the native suites,
@@ -66,5 +66,5 @@ The conditions a host, build and test environment must meet. Usage is in
 
 - Every push to `main`, every `v*` tag and every pull request to `main` builds
   all targets; a `v*` tag publishes the binaries as a GitHub Release.
-- The tag name follows the version in `foton-handoff-src/Cargo.toml`, so
+- The tag name follows the version in `rust-src/Cargo.toml`, so
   `Cargo.toml`, `Cargo.lock` and `CHANGELOG.md` stay in step.

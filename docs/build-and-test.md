@@ -98,25 +98,25 @@ cargo test
 cargo build --release
 ```
 
-`scripts/build-and-test-all.sh` runs all of that plus three builds (Linux glibc
-native, Windows cross-compile, Linux musl), three e2e runs and two speedtests in
-one pass. It requires WSL with PowerShell interop (`wslpath`,
+`rust-src/tools/build-and-test-all.sh` runs all of that plus three builds (Linux
+glibc native, Windows cross-compile, Linux musl), three e2e runs and two
+speedtests in one pass. It requires WSL with PowerShell interop (`wslpath`,
 `powershell.exe`); it does not run on a plain bash host.
 
 ## Linux e2e
 
 After building, run the smoke test on Linux. Commands assume the current
-directory is the crate folder (`foton-handoff-src/`); the scripts live in the
-project-root `scripts/` directory:
+directory is the crate folder (`rust-src/`); the tools live in its `tools/`
+directory:
 
 ```text
-bash ../scripts/e2e-linux.sh ./target/release/foton-handoff
+bash tools/e2e-linux.sh ./target/release/foton-handoff
 ```
 
 The same script accepts a static musl binary:
 
 ```text
-bash ../scripts/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-handoff
+bash tools/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-handoff
 ```
 
 ## Windows e2e
@@ -124,7 +124,7 @@ bash ../scripts/e2e-linux.sh ./target/x86_64-unknown-linux-musl/release/foton-ha
 After building, run the smoke test on Windows, again from the crate folder:
 
 ```text
-powershell -NoProfile -ExecutionPolicy Bypass -File ..\scripts\e2e-windows.ps1 -Bin <path-to-foton-handoff.exe>
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\e2e-windows.ps1 -Bin <path-to-foton-handoff.exe>
 ```
 
 `-Bin` is optional when the release build sits at its default location.

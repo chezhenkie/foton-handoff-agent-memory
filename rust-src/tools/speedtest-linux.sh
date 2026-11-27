@@ -5,8 +5,7 @@ BIN="${1:-}"
 if [ -z "$BIN" ]; then
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   for cand in \
-    "$SCRIPT_DIR/../release/foton-handoff" \
-    "$SCRIPT_DIR/../foton-handoff-src/target/release/foton-handoff" \
+    "$SCRIPT_DIR/../../releases/foton-handoff" \
     "$SCRIPT_DIR/../target/release/foton-handoff"; do
     if [ -f "$cand" ] && [ -x "$cand" ]; then BIN="$cand"; break; fi
   done

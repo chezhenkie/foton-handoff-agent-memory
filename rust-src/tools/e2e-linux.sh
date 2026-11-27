@@ -1,12 +1,11 @@
 #!/bin/bash
-# Bash e2e smoke test for foton-handoff (Linux and macOS). Mirrors scripts/e2e-windows.ps1.
+# Bash e2e smoke test for foton-handoff (Linux and macOS). Mirrors tools/e2e-windows.ps1.
 #
 # Usage:
-#   bash scripts/e2e-linux.sh [path/to/foton-handoff]
+#   bash rust-src/tools/e2e-linux.sh [path/to/foton-handoff]
 #
 # With no argument, these candidates are tried relative to this script's folder:
-#   ../release/foton-handoff
-#   ../foton-handoff-src/target/release/foton-handoff
+#   ../../releases/foton-handoff
 #   ../target/release/foton-handoff
 set -e
 
@@ -14,8 +13,7 @@ BIN="${1:-}"
 if [ -z "$BIN" ]; then
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
   for cand in \
-    "$SCRIPT_DIR/../release/foton-handoff" \
-    "$SCRIPT_DIR/../foton-handoff-src/target/release/foton-handoff" \
+    "$SCRIPT_DIR/../../releases/foton-handoff" \
     "$SCRIPT_DIR/../target/release/foton-handoff"; do
     if [ -f "$cand" ] && [ -x "$cand" ]; then BIN="$cand"; break; fi
   done

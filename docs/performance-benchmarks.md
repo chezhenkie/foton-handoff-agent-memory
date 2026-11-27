@@ -27,17 +27,17 @@ Scaling behavior: linear in directory size as expected from the scan (`matching_
 Two scripts reproduce these benchmarks on demand:
 
 ```bash
-bash scripts/speedtest-linux.sh <path-to-foton-handoff>
+bash rust-src/tools/speedtest-linux.sh <path-to-foton-handoff>
 ```
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-windows.ps1 -Bin <path-to-foton-handoff.exe>
+powershell -NoProfile -ExecutionPolicy Bypass -File rust-src\tools\speedtest-windows.ps1 -Bin <path-to-foton-handoff.exe>
 ```
 
 Or run both via the orchestrator (which also runs fmt, clippy, unit tests, builds, and e2e suites):
 
 ```bash
-bash scripts/build-and-test-all.sh
+bash rust-src/tools/build-and-test-all.sh
 ```
 
 The Linux speedtest copies the binary to `/tmp/` (native ext4); the Windows speedtest copies to `%TEMP%\foton-handoff\` (NTFS). This follows the speedtest methodology rules: no cross-filesystem testing.

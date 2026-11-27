@@ -1,8 +1,8 @@
 <#
-Windows speedtest for foton-handoff. Mirrors scripts/speedtest-linux.sh.
+Windows speedtest for foton-handoff. Mirrors tools/speedtest-linux.sh.
 
 Usage:
-  powershell -NoProfile -ExecutionPolicy Bypass -File scripts\speedtest-windows.ps1 [-Bin path\to\foton-handoff.exe]
+  powershell -NoProfile -ExecutionPolicy Bypass -File rust-src\tools\speedtest-windows.ps1 [-Bin path\to\foton-handoff.exe]
 #>
 param(
     [string]$Bin = ""
@@ -12,8 +12,7 @@ $ErrorActionPreference = "Stop"
 
 if ([string]::IsNullOrEmpty($Bin)) {
     $candidates = @(
-        (Join-Path $PSScriptRoot "..\release\foton-handoff.exe"),
-        (Join-Path $PSScriptRoot "..\foton-handoff-src\target\x86_64-pc-windows-gnu\release\foton-handoff.exe"),
+        (Join-Path $PSScriptRoot "..\..\releases\foton-handoff.exe"),
         (Join-Path $PSScriptRoot "..\target\x86_64-pc-windows-gnu\release\foton-handoff.exe")
     )
     $found = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1

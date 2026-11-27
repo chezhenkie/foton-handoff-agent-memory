@@ -6,6 +6,8 @@ Scope: `README.md`, `CHANGELOG.md`, `foton-handoff-design-and-state.md`, `foton-
 
 Method: line-by-line read, plus runtime probes with the v0.1.7 Windows binary in a temporary sandbox under the workspace. The sandbox was removed afterwards. No source or doc changes were made.
 
+Note: this report predates the folder reorganisation. Paths and line numbers are as they were on the audit date: `foton-handoff-src/` is now `rust-src/`, the root docs are in `docs/`, `scripts/` is `rust-src/tools/` and `release/` is `releases/`.
+
 ## Resolutions (2026-10-29 doc pass)
 
 - D1: A. The docs now state the normalization and the 40-character limit.
